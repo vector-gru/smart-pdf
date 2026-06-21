@@ -30,6 +30,21 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  pdf: ^3.10.1
+  pdfx: ^2.9.2
+  printing: ^5.11.0
+  camera: ^0.10.0
+  image_picker: ^0.8.7
+  image_cropper: ^3.0.1
+  permission_handler: ^10.0.0
+  path_provider: ^2.0.13
+  image: ^4.0.15
+  flutter_image_compress: ^1.1.0
+  share_plus: ^6.3.0
+  pdf_render: ^1.4.12
+  uuid: ^4.5.1
+  drift: ^2.7.0
+  sqlite3_flutter_libs: ^0.5.5
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -38,6 +53,8 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  build_runner: ^2.4.0
+  drift_dev: ^2.7.0
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
