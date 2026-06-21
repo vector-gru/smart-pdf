@@ -1,0 +1,1 @@
+// Page thumbnail widget
