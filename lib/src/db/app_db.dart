@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
@@ -79,12 +80,29 @@ class AppDatabase extends _$AppDatabase {
       final fileName = title.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_');
       final pdfPath = await PdfService.createPdfFromImages(savedImagePaths, fileName);
 
+      // Generate thumbnail from first page image
+      String? thumbnailPath;
+      if (savedImagePaths.isNotEmpty) {
+        final thumbsDir = Directory(p.join(docsDir.path, 'smart_pdf', 'thumbs'));
+        await thumbsDir.create(recursive: true);
+        final thumbFile = p.join(thumbsDir.path, '${const Uuid().v4()}.jpg');
+        final result = await FlutterImageCompress.compressAndGetFile(
+          savedImagePaths[0],
+          thumbFile,
+          minWidth: 200,
+          minHeight: 260,
+          quality: 75,
+        );
+        thumbnailPath = result?.path;
+      }
+
       final docId = const Uuid().v4();
       await into(documents).insert(DocumentsCompanion.insert(
         id: Value(docId),
         title: title,
         filePath: pdfPath,
         pagesCount: Value(savedImagePaths.length),
+        thumbnailPath: Value(thumbnailPath),
       ));
 
       for (var i = 0; i < savedImagePaths.length; i++) {

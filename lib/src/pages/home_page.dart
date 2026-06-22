@@ -19,11 +19,20 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   Future<List<Document>>? _docsFuture;
+  bool _searchActive = false;
+  String _searchQuery = '';
+  final _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _loadDocs();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   void _loadDocs() {
@@ -64,15 +73,31 @@ class _HomePageState extends State<HomePage> {
           icon: const Icon(Icons.menu),
           onPressed: () {},
         ),
-        title: const Text('SmartPDF', style: TextStyle(fontWeight: FontWeight.w600)),
+        title: _searchActive
+            ? TextField(
+                controller: _searchController,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: 'Search documents…',
+                  border: InputBorder.none,
+                ),
+                onChanged: (v) => setState(() => _searchQuery = v),
+              )
+            : const Text('SmartPDF', style: TextStyle(fontWeight: FontWeight.w600)),
         actions: [
           IconButton(
             icon: const Icon(Icons.emoji_events, color: AppColors.crown),
             onPressed: () {},
           ),
           IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {},
+            icon: Icon(_searchActive ? Icons.close : Icons.search),
+            onPressed: () => setState(() {
+              _searchActive = !_searchActive;
+              if (!_searchActive) {
+                _searchQuery = '';
+                _searchController.clear();
+              }
+            }),
           ),
         ],
       ),
@@ -82,7 +107,10 @@ class _HomePageState extends State<HomePage> {
           if (snap.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
           }
-          final docs = snap.data ?? [];
+          final allDocs = snap.data ?? [];
+          final docs = _searchQuery.isEmpty
+              ? allDocs
+              : allDocs.where((d) => d.title.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
           if (docs.isEmpty) {
             return Center(
               child: Column(
@@ -105,7 +133,7 @@ class _HomePageState extends State<HomePage> {
               return DocumentCard(
                 document: d,
                 onTap: () {
-                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => ViewerPage(pdfPath: d.filePath)));
+                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => ViewerPage(pdfPath: d.filePath, title: d.title)));
                 },
                 onShare: () => _shareDoc(d),
                 onDelete: () => _deleteDoc(d),
@@ -193,7 +221,7 @@ class _HomePageState extends State<HomePage> {
       _loadDocs();
       final doc = await widget.db.getDocumentById(created);
       if (doc != null && mounted) {
-        Navigator.of(context).push(MaterialPageRoute(builder: (_) => ViewerPage(pdfPath: doc.filePath)));
+        Navigator.of(context).push(MaterialPageRoute(builder: (_) => ViewerPage(pdfPath: doc.filePath, title: doc.title)));
       }
     }
   }
