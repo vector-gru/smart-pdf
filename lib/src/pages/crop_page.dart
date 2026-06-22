@@ -1,15 +1,17 @@
 import 'dart:io';
+import 'dart:math' as math;
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 
-/// [workingPath]  — the file shown in the scanner (will be overwritten by Done).
-/// [originalPath] — immutable backup; crop always reads from here so re-cropping
-///                  always starts from the full original image.
+/// [workingPath]  — written by Done (may equal originalPath on first crop).
+/// [originalPath] — never mutated; all crops start from here.
 class CropPage extends StatefulWidget {
   final String workingPath;
   final String originalPath;
   final int currentPage;
   final int totalPages;
+
   const CropPage({
     super.key,
     required this.workingPath,
@@ -23,24 +25,36 @@ class CropPage extends StatefulWidget {
 }
 
 class _CropPageState extends State<CropPage> {
-  // Handles as fractions (0..1) of the image display rect
+  // Corner handles as fractions (0..1) of the *original* image
   late Offset _tl, _tr, _bl, _br;
 
-  // Intrinsic size of the *original* image
-  double _imgW = 1, _imgH = 1;
-  bool _ready = false;
+  // Original image (loaded once, never mutated)
+  img.Image? _origImage;
+  // Accumulated rotation applied on top of original for display/warp
+  int _rotateDeg = 0; // 0, 90, 180, 270
 
-  // Which handle is being dragged (-1 = none)
+  // Which handle is being dragged
   int _activeHandle = -1;
 
-  // Version bump forces Image widget key change → cache eviction on Android
-  int _version = 0;
+  // Preview mode: show warped result before committing
+  bool _previewing = false;
+  Uint8List? _previewBytes;
+
+  bool get _ready => _origImage != null;
+
+  // Effective width/height after rotation
+  double get _imgW => (_rotateDeg == 90 || _rotateDeg == 270)
+      ? _origImage!.height.toDouble()
+      : _origImage!.width.toDouble();
+  double get _imgH => (_rotateDeg == 90 || _rotateDeg == 270)
+      ? _origImage!.width.toDouble()
+      : _origImage!.height.toDouble();
 
   @override
   void initState() {
     super.initState();
     _resetHandles();
-    _loadIntrinsicSize();
+    _loadOriginal();
   }
 
   void _resetHandles() {
@@ -50,50 +64,223 @@ class _CropPageState extends State<CropPage> {
     _br = const Offset(0.95, 0.95);
   }
 
-  Future<void> _loadIntrinsicSize() async {
-    // Always measure from the original so dimensions stay stable across re-crops
+  Future<void> _loadOriginal() async {
     final bytes = await File(widget.originalPath).readAsBytes();
     final decoded = img.decodeImage(bytes);
     if (decoded == null || !mounted) return;
+    setState(() => _origImage = decoded);
+    // Run auto-detect right away so handles start on the document
+    _autoDetect();
+  }
+
+  // ── Auto edge detection ────────────────────────────────────────────────────
+  // Downsample → compute per-pixel gradient magnitude → find the outermost
+  // rows/columns that exceed a threshold → map back to handle fractions.
+  void _autoDetect() {
+    final src = _effectiveImage();
+    if (src == null) return;
+
+    const ds = 4; // downsample factor for speed
+    final sw = src.width ~/ ds, sh = src.height ~/ ds;
+    if (sw < 4 || sh < 4) return;
+
+    final small = img.copyResize(src, width: sw, height: sh);
+
+    // Gradient magnitude (Sobel-lite: just horizontal + vertical diff)
+    List<List<double>> grad = List.generate(sh, (_) => List.filled(sw, 0.0));
+    for (int y = 1; y < sh - 1; y++) {
+      for (int x = 1; x < sw - 1; x++) {
+        lum(int px, int py) {
+          final p = small.getPixel(px, py);
+          return (p.r * 0.299 + p.g * 0.587 + p.b * 0.114) / 255.0;
+        }
+        final gx = lum(x + 1, y) - lum(x - 1, y);
+        final gy = lum(x, y + 1) - lum(x, y - 1);
+        grad[y][x] = math.sqrt(gx * gx + gy * gy);
+      }
+    }
+
+    // Threshold: 60% of max gradient
+    double maxG = 0;
+    for (final row in grad) {
+      for (final v in row) { if (v > maxG) maxG = v; }
+    }
+    final thresh = maxG * 0.30;
+
+    // Find tight bounding box of strong-edge pixels
+    int left = sw, right = 0, top = sh, bottom = 0;
+    for (int y = 0; y < sh; y++) {
+      for (int x = 0; x < sw; x++) {
+        if (grad[y][x] >= thresh) {
+          if (x < left)   left   = x;
+          if (x > right)  right  = x;
+          if (y < top)    top    = y;
+          if (y > bottom) bottom = y;
+        }
+      }
+    }
+
+    // Reject if detection is too small (< 20% of image) — keep defaults
+    if ((right - left) < sw * 0.20 || (bottom - top) < sh * 0.20) return;
+
+    // Add a small inward margin so handles sit just inside the content
+    const margin = 0.01;
+    final l = (left   / sw).clamp(0.0, 1.0) + margin;
+    final r = (right  / sw).clamp(0.0, 1.0) - margin;
+    final t = (top    / sh).clamp(0.0, 1.0) + margin;
+    final b = (bottom / sh).clamp(0.0, 1.0) - margin;
+
+    if (r <= l || b <= t) return;
+
+    if (mounted) {
+      setState(() {
+        _tl = Offset(l, t);
+        _tr = Offset(r, t);
+        _bl = Offset(l, b);
+        _br = Offset(r, b);
+      });
+    }
+  }
+
+  // ── Rotation ───────────────────────────────────────────────────────────────
+  void _rotate() {
     setState(() {
-      _imgW = decoded.width.toDouble();
-      _imgH = decoded.height.toDouble();
-      _ready = true;
+      _rotateDeg = (_rotateDeg + 90) % 360;
+      _resetHandles();
+      _previewing = false;
+      _previewBytes = null;
+    });
+    // Re-run auto-detect in the new orientation
+    _autoDetect();
+  }
+
+  // ── Returns the original image rotated by _rotateDeg ──────────────────────
+  img.Image? _effectiveImage() {
+    if (_origImage == null) return null;
+    if (_rotateDeg == 0) return _origImage;
+    return img.copyRotate(_origImage!, angle: _rotateDeg);
+  }
+
+  // ── Preview ────────────────────────────────────────────────────────────────
+  Future<void> _togglePreview() async {
+    if (_previewing) {
+      setState(() { _previewing = false; _previewBytes = null; });
+      return;
+    }
+    final warped = await _computeWarp();
+    if (warped == null || !mounted) return;
+    setState(() {
+      _previewBytes = Uint8List.fromList(img.encodeJpg(warped, quality: 88));
+      _previewing = true;
     });
   }
 
-  /// The BoxFit.contain rect for the image inside the given container.
+  // ── Warp computation (shared by preview + done) ───────────────────────────
+  Future<img.Image?> _computeWarp() async {
+    final source = _effectiveImage();
+    if (source == null) return null;
+
+    final iw = source.width.toDouble(), ih = source.height.toDouble();
+
+    // Source quad in image pixels (TL, TR, BR, BL)
+    final src = [
+      Offset(_tl.dx * iw, _tl.dy * ih),
+      Offset(_tr.dx * iw, _tr.dy * ih),
+      Offset(_br.dx * iw, _br.dy * ih),
+      Offset(_bl.dx * iw, _bl.dy * ih),
+    ];
+
+    double edgeLen(Offset a, Offset b) => (b - a).distance;
+    final outW = ((edgeLen(src[0], src[1]) + edgeLen(src[3], src[2])) / 2)
+        .round()
+        .clamp(1, 8000);
+    final outH = ((edgeLen(src[0], src[3]) + edgeLen(src[1], src[2])) / 2)
+        .round()
+        .clamp(1, 8000);
+
+    final warped = img.Image(width: outW, height: outH);
+
+    for (int dy = 0; dy < outH; dy++) {
+      final v = outH == 1 ? 0.0 : dy / (outH - 1);
+      for (int dx = 0; dx < outW; dx++) {
+        final u = outW == 1 ? 0.0 : dx / (outW - 1);
+
+        // Bilinear inverse map: TL*(1-u)(1-v) + TR*u(1-v) + BR*u*v + BL*(1-u)*v
+        final sx = src[0].dx * (1-u) * (1-v)
+                 + src[1].dx *    u  * (1-v)
+                 + src[2].dx *    u  *    v
+                 + src[3].dx * (1-u) *    v;
+        final sy = src[0].dy * (1-u) * (1-v)
+                 + src[1].dy *    u  * (1-v)
+                 + src[2].dy *    u  *    v
+                 + src[3].dy * (1-u) *    v;
+
+        final x0 = sx.floor().clamp(0, source.width  - 1);
+        final y0 = sy.floor().clamp(0, source.height - 1);
+        final x1 = (x0 + 1).clamp(0, source.width  - 1);
+        final y1 = (y0 + 1).clamp(0, source.height - 1);
+        final fx = sx - x0, fy = sy - y0;
+
+        final c00 = source.getPixel(x0, y0);
+        final c10 = source.getPixel(x1, y0);
+        final c01 = source.getPixel(x0, y1);
+        final c11 = source.getPixel(x1, y1);
+
+        int bl(num a, num b, num c, num d) =>
+            (a*(1-fx)*(1-fy) + b*fx*(1-fy) + c*(1-fx)*fy + d*fx*fy)
+            .round().clamp(0, 255);
+
+        warped.setPixelRgba(dx, dy,
+          bl(c00.r, c10.r, c01.r, c11.r),
+          bl(c00.g, c10.g, c01.g, c11.g),
+          bl(c00.b, c10.b, c01.b, c11.b),
+          255,
+        );
+      }
+    }
+    return warped;
+  }
+
+  // ── Done ───────────────────────────────────────────────────────────────────
+  Future<void> _done() async {
+    final warped = await _computeWarp();
+    if (warped == null) { if (mounted) Navigator.pop(context, true); return; }
+    final workingFile = File(widget.workingPath);
+    await workingFile.writeAsBytes(img.encodeJpg(warped, quality: 90));
+    await FileImage(workingFile).evict();
+    if (mounted) Navigator.pop(context, true);
+  }
+
+  // ── Rect of image inside its container (BoxFit.contain) ───────────────────
   Rect _imgRect(Size container) {
     final scale = (_imgW / container.width > _imgH / container.height)
         ? container.width / _imgW
         : container.height / _imgH;
-    final dw = _imgW * scale;
-    final dh = _imgH * scale;
+    final dw = _imgW * scale, dh = _imgH * scale;
     return Rect.fromLTWH(
-      (container.width - dw) / 2,
+      (container.width  - dw) / 2,
       (container.height - dh) / 2,
-      dw,
-      dh,
+      dw, dh,
     );
   }
 
-  // --- Handle positions (absolute pixels) ---
+  // ── Handle absolute positions ──────────────────────────────────────────────
   List<Offset> _handles(Rect r) {
     final tl = Offset(r.left + _tl.dx * r.width, r.top + _tl.dy * r.height);
     final tr = Offset(r.left + _tr.dx * r.width, r.top + _tr.dy * r.height);
     final bl = Offset(r.left + _bl.dx * r.width, r.top + _bl.dy * r.height);
     final br = Offset(r.left + _br.dx * r.width, r.top + _br.dy * r.height);
     return [
-      tl, tr, bl, br,                               // 0–3 corners
-      Offset((tl.dx + tr.dx) / 2, (tl.dy + tr.dy) / 2), // 4 top-center
-      Offset((bl.dx + br.dx) / 2, (bl.dy + br.dy) / 2), // 5 bottom-center
-      Offset((tl.dx + bl.dx) / 2, (tl.dy + bl.dy) / 2), // 6 mid-left
-      Offset((tr.dx + br.dx) / 2, (tr.dy + br.dy) / 2), // 7 mid-right
+      tl, tr, bl, br,
+      Offset((tl.dx+tr.dx)/2, (tl.dy+tr.dy)/2), // 4 top-mid
+      Offset((bl.dx+br.dx)/2, (bl.dy+br.dy)/2), // 5 bot-mid
+      Offset((tl.dx+bl.dx)/2, (tl.dy+bl.dy)/2), // 6 left-mid
+      Offset((tr.dx+br.dx)/2, (tr.dy+br.dy)/2), // 7 right-mid
     ];
   }
 
   int _nearestHandle(Offset pos, List<Offset> handles) {
-    const threshold = 36.0;
+    const threshold = 40.0;
     int best = -1;
     double bestDist = double.infinity;
     for (int i = 0; i < handles.length; i++) {
@@ -109,109 +296,26 @@ class _CropPageState extends State<CropPage> {
     Offset c(Offset o) => Offset(o.dx.clamp(0.0, 1.0), o.dy.clamp(0.0, 1.0));
     setState(() {
       switch (index) {
-        case 0: _tl = c(_tl + Offset(dx, dy)); break;
-        case 1: _tr = c(_tr + Offset(dx, dy)); break;
-        case 2: _bl = c(_bl + Offset(dx, dy)); break;
-        case 3: _br = c(_br + Offset(dx, dy)); break;
-        case 4: _tl = c(_tl + Offset(0, dy)); _tr = c(_tr + Offset(0, dy)); break;
-        case 5: _bl = c(_bl + Offset(0, dy)); _br = c(_br + Offset(0, dy)); break;
-        case 6: _tl = c(_tl + Offset(dx, 0)); _bl = c(_bl + Offset(dx, 0)); break;
-        case 7: _tr = c(_tr + Offset(dx, 0)); _br = c(_br + Offset(dx, 0)); break;
+        case 0: _tl = c(_tl + Offset(dx, dy));
+        case 1: _tr = c(_tr + Offset(dx, dy));
+        case 2: _bl = c(_bl + Offset(dx, dy));
+        case 3: _br = c(_br + Offset(dx, dy));
+        case 4: _tl = c(_tl + Offset(0, dy)); _tr = c(_tr + Offset(0, dy));
+        case 5: _bl = c(_bl + Offset(0, dy)); _br = c(_br + Offset(0, dy));
+        case 6: _tl = c(_tl + Offset(dx, 0)); _bl = c(_bl + Offset(dx, 0));
+        case 7: _tr = c(_tr + Offset(dx, 0)); _br = c(_br + Offset(dx, 0));
       }
+      // Leaving preview on drag would be confusing
+      _previewing = false;
+      _previewBytes = null;
     });
   }
 
-  // --- Rotate (reads working file, writes working file) ---
-  Future<void> _rotate() async {
-    final file = File(widget.workingPath);
-    final bytes = await file.readAsBytes();
-    final decoded = img.decodeImage(bytes);
-    if (decoded == null) return;
-    final rotated = img.copyRotate(decoded, angle: 90);
-    await file.writeAsBytes(img.encodeJpg(rotated, quality: 90));
-    await FileImage(file).evict();
-    setState(() {
-      final tmp = _imgW; _imgW = _imgH; _imgH = tmp;
-      _resetHandles();
-      _version++;
-    });
-  }
-
-  // --- Done: perspective-warp quad → rectangle, write working ---
-  Future<void> _done() async {
-    final origFile = File(widget.originalPath);
-    final bytes = await origFile.readAsBytes();
-    final decoded = img.decodeImage(bytes);
-    if (decoded == null) { if (mounted) Navigator.pop(context, true); return; }
-
-    final iw = decoded.width.toDouble(), ih = decoded.height.toDouble();
-
-    // Source corners in image pixels
-    final src = [
-      Offset(_tl.dx * iw, _tl.dy * ih),
-      Offset(_tr.dx * iw, _tr.dy * ih),
-      Offset(_br.dx * iw, _br.dy * ih),
-      Offset(_bl.dx * iw, _bl.dy * ih),
-    ];
-
-    // Output size = average of opposite side lengths
-    double dist(Offset a, Offset b) => (b - a).distance;
-    final outW = ((dist(src[0], src[1]) + dist(src[3], src[2])) / 2).round().clamp(1, 8000);
-    final outH = ((dist(src[0], src[3]) + dist(src[1], src[2])) / 2).round().clamp(1, 8000);
-
-    final warped = img.Image(width: outW, height: outH);
-
-    // Bilinear inverse mapping: for each dst pixel find its source in the quad.
-    // Uses bilinear (u,v) solve on the quad.
-    for (int dy = 0; dy < outH; dy++) {
-      final v = dy / (outH - 1);
-      for (int dx = 0; dx < outW; dx++) {
-        final u = dx / (outW - 1);
-        // Bilinear interpolation of the quad corners (TL,TR,BR,BL order)
-        final sx = src[0].dx * (1 - u) * (1 - v)
-                 + src[1].dx * u * (1 - v)
-                 + src[2].dx * u * v
-                 + src[3].dx * (1 - u) * v;
-        final sy = src[0].dy * (1 - u) * (1 - v)
-                 + src[1].dy * u * (1 - v)
-                 + src[2].dy * u * v
-                 + src[3].dy * (1 - u) * v;
-
-        // Bilinear sample from source
-        final x0 = sx.floor().clamp(0, decoded.width - 1);
-        final y0 = sy.floor().clamp(0, decoded.height - 1);
-        final x1 = (x0 + 1).clamp(0, decoded.width - 1);
-        final y1 = (y0 + 1).clamp(0, decoded.height - 1);
-        final fx = sx - x0, fy = sy - y0;
-
-        final c00 = decoded.getPixel(x0, y0);
-        final c10 = decoded.getPixel(x1, y0);
-        final c01 = decoded.getPixel(x0, y1);
-        final c11 = decoded.getPixel(x1, y1);
-
-        int ch(num a, num b, num c, num d) =>
-            (a * (1 - fx) * (1 - fy) + b * fx * (1 - fy) +
-             c * (1 - fx) * fy       + d * fx * fy).round().clamp(0, 255);
-
-        warped.setPixelRgba(dx, dy,
-          ch(c00.r, c10.r, c01.r, c11.r),
-          ch(c00.g, c10.g, c01.g, c11.g),
-          ch(c00.b, c10.b, c01.b, c11.b),
-          255,
-        );
-      }
-    }
-
-    final workingFile = File(widget.workingPath);
-    await workingFile.writeAsBytes(img.encodeJpg(warped, quality: 90));
-    await FileImage(workingFile).evict();
-    if (mounted) Navigator.pop(context, true);
-  }
-
+  // ── Build ──────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE0E0E0),
+      backgroundColor: const Color(0xFF1A1A1A),
       body: SafeArea(
         child: Column(
           children: [
@@ -227,44 +331,94 @@ class _CropPageState extends State<CropPage> {
 
   Widget _buildAppBar() {
     return Container(
-      color: Colors.white,
+      color: Colors.black,
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       child: Row(
         children: [
-          IconButton(icon: const Icon(Icons.close, size: 28), onPressed: () => Navigator.pop(context, false)),
-          const SizedBox(width: 8),
-          const Text('Adjust borders', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
+          IconButton(
+            icon: const Icon(Icons.close, size: 28, color: Colors.white),
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          const SizedBox(width: 4),
+          const Text('Adjust borders',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white)),
+          const Spacer(),
+          if (_previewing)
+            Container(
+              margin: const EdgeInsets.only(right: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.blue,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Text('PREVIEW', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+            ),
         ],
       ),
     );
   }
 
   Widget _buildCropArea() {
+    // Preview mode: show the warped result full-area
+    if (_previewing && _previewBytes != null) {
+      return Stack(
+        children: [
+          Center(
+            child: Image.memory(
+              _previewBytes!,
+              fit: BoxFit.contain,
+            ),
+          ),
+          Positioned(
+            bottom: 12, left: 0, right: 0,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Text('This is what will be saved',
+                    style: TextStyle(color: Colors.white, fontSize: 12)),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     return LayoutBuilder(builder: (context, constraints) {
       final containerSize = Size(constraints.maxWidth, constraints.maxHeight);
       final imgRect = _imgRect(containerSize);
       final handles = _handles(imgRect);
 
+      // Build the image to display: original rotated via _rotateDeg
+      Widget imageWidget;
+      if (_rotateDeg == 0) {
+        imageWidget = Image.file(
+          File(widget.originalPath),
+          key: const ValueKey('orig'),
+          fit: BoxFit.contain,
+        );
+      } else {
+        // Render rotated in-memory bytes so the widget shows the correct orientation
+        final rotated = _effectiveImage()!;
+        final bytes = Uint8List.fromList(img.encodeJpg(rotated, quality: 85));
+        imageWidget = Image.memory(
+          bytes,
+          key: ValueKey('rot$_rotateDeg'),
+          fit: BoxFit.contain,
+        );
+      }
+
       return GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onPanStart: (d) {
-          _activeHandle = _nearestHandle(d.localPosition, handles);
-        },
-        onPanUpdate: (d) {
-          if (_activeHandle >= 0) _applyDrag(_activeHandle, d.delta, imgRect);
-        },
-        onPanEnd: (_) => _activeHandle = -1,
+        onPanStart: (d) => _activeHandle = _nearestHandle(d.localPosition, handles),
+        onPanUpdate: (d) { if (_activeHandle >= 0) _applyDrag(_activeHandle, d.delta, imgRect); },
+        onPanEnd:   (_) => _activeHandle = -1,
         child: Stack(
           children: [
-            // Image
-            Positioned.fill(
-              child: Image.file(
-                File(widget.workingPath),
-                key: ValueKey('${widget.workingPath}-$_version'),
-                fit: BoxFit.contain,
-              ),
-            ),
-            // Overlay + border + guide lines
+            Positioned.fill(child: imageWidget),
             Positioned.fill(
               child: CustomPaint(
                 painter: _CropPainter(
@@ -273,18 +427,34 @@ class _CropPageState extends State<CropPage> {
                 ),
               ),
             ),
-            // Handle dots (visual only — gestures handled above)
-            for (final h in handles)
+            // Corner handles (larger tap targets)
+            for (int i = 0; i < 4; i++)
               Positioned(
-                left: h.dx - 12,
-                top: h.dy - 12,
+                left: handles[i].dx - 14,
+                top:  handles[i].dy - 14,
                 child: IgnorePointer(
                   child: Container(
-                    width: 24, height: 24,
+                    width: 28, height: 28,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.blue, width: 2.5),
-                      color: Colors.white.withValues(alpha: 0.85),
+                      color: Colors.blue,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                  ),
+                ),
+              ),
+            // Mid-edge handles (smaller)
+            for (int i = 4; i < 8; i++)
+              Positioned(
+                left: handles[i].dx - 9,
+                top:  handles[i].dy - 9,
+                child: IgnorePointer(
+                  child: Container(
+                    width: 18, height: 18,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withValues(alpha: 0.9),
+                      border: Border.all(color: Colors.blue, width: 2),
                     ),
                   ),
                 ),
@@ -297,13 +467,13 @@ class _CropPageState extends State<CropPage> {
 
   Widget _buildPageIndicator() {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        decoration: BoxDecoration(color: Colors.grey[700], borderRadius: BorderRadius.circular(16)),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+        decoration: BoxDecoration(color: Colors.grey[800], borderRadius: BorderRadius.circular(16)),
         child: Text(
           'Page ${widget.currentPage + 1} of ${widget.totalPages}',
-          style: const TextStyle(color: Colors.white, fontSize: 13),
+          style: const TextStyle(color: Colors.white, fontSize: 12),
         ),
       ),
     );
@@ -311,17 +481,20 @@ class _CropPageState extends State<CropPage> {
 
   Widget _buildBottomBar() {
     return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.only(top: 12, bottom: 8),
+      color: Colors.black,
+      padding: const EdgeInsets.only(top: 10, bottom: 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _btn(Icons.document_scanner_outlined, 'Auto-detect', () => setState(() {
-            _tl = const Offset(0.02, 0.02); _tr = const Offset(0.98, 0.02);
-            _bl = const Offset(0.02, 0.98); _br = const Offset(0.98, 0.98);
-          })),
-          _btn(Icons.crop_free, 'No crop', () => setState(_resetHandles)),
+          _btn(Icons.document_scanner_outlined, 'Auto', _autoDetect),
+          _btn(Icons.crop_free, 'Reset', _resetHandles),
           _btn(Icons.rotate_right, 'Rotate', _rotate),
+          _btn(
+            _previewing ? Icons.edit : Icons.preview,
+            _previewing ? 'Edit' : 'Preview',
+            _togglePreview,
+            color: Colors.orange,
+          ),
           _btn(Icons.check, 'Done', _done, color: Colors.blue),
         ],
       ),
@@ -329,18 +502,18 @@ class _CropPageState extends State<CropPage> {
   }
 
   Widget _btn(IconData icon, String label, VoidCallback onTap, {Color? color}) {
-    final c = color ?? Colors.grey[700]!;
+    final c = color ?? Colors.grey[400]!;
     return InkWell(
       onTap: onTap,
       child: SizedBox(
-        width: 76,
+        width: 64,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 26, color: c),
-            const SizedBox(height: 4),
-            Text(label, style: TextStyle(fontSize: 11, color: c,
-                fontWeight: color != null ? FontWeight.w600 : FontWeight.normal)),
+            Icon(icon, size: 24, color: c),
+            const SizedBox(height: 3),
+            Text(label, style: TextStyle(fontSize: 10, color: c,
+                fontWeight: color != null ? FontWeight.w700 : FontWeight.normal)),
           ],
         ),
       ),
@@ -348,37 +521,52 @@ class _CropPageState extends State<CropPage> {
   }
 }
 
+// ── Painter ──────────────────────────────────────────────────────────────────
 class _CropPainter extends CustomPainter {
   final Offset tl, tr, bl, br;
   final Rect imgRect;
-  _CropPainter({required this.tl, required this.tr, required this.bl, required this.br, required this.imgRect});
+
+  const _CropPainter({
+    required this.tl, required this.tr,
+    required this.bl, required this.br,
+    required this.imgRect,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
     final cropPath = Path()
-      ..moveTo(tl.dx, tl.dy)..lineTo(tr.dx, tr.dy)
-      ..lineTo(br.dx, br.dy)..lineTo(bl.dx, bl.dy)..close();
+      ..moveTo(tl.dx, tl.dy)
+      ..lineTo(tr.dx, tr.dy)
+      ..lineTo(br.dx, br.dy)
+      ..lineTo(bl.dx, bl.dy)
+      ..close();
 
-    // Grey outside image rect
+    // Darken area outside image
     canvas.drawPath(
-      Path.combine(PathOperation.difference,
+      Path.combine(
+        PathOperation.difference,
         Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height)),
-        Path()..addRect(imgRect)),
-      Paint()..color = const Color(0xFFE0E0E0),
+        Path()..addRect(imgRect),
+      ),
+      Paint()..color = const Color(0xFF1A1A1A),
     );
 
-    // Semi-transparent white outside crop, inside image
+    // Dim area outside crop quad but inside image
     canvas.drawPath(
       Path.combine(PathOperation.difference, Path()..addRect(imgRect), cropPath),
-      Paint()..color = Colors.white.withValues(alpha: 0.55),
+      Paint()..color = Colors.black.withValues(alpha: 0.50),
     );
 
     // Crop border
     canvas.drawPath(cropPath, Paint()
-      ..color = Colors.blue..strokeWidth = 2.0..style = PaintingStyle.stroke);
+      ..color = Colors.blue
+      ..strokeWidth = 2.5
+      ..style = PaintingStyle.stroke);
 
-    // Rule-of-thirds grid
-    final g = Paint()..color = Colors.blue.withValues(alpha: 0.35)..strokeWidth = 0.8;
+    // Rule-of-thirds grid inside quad
+    final g = Paint()
+      ..color = Colors.white.withValues(alpha: 0.4)
+      ..strokeWidth = 0.8;
     for (int i = 1; i <= 2; i++) {
       final t = i / 3.0;
       canvas.drawLine(
@@ -391,5 +579,6 @@ class _CropPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _CropPainter old) => true;
+  bool shouldRepaint(covariant _CropPainter old) =>
+      old.tl != tl || old.tr != tr || old.bl != bl || old.br != br;
 }
