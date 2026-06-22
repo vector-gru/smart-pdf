@@ -6,7 +6,7 @@ import '../constants/app_colors.dart';
 import '../constants/app_constants.dart';
 import '../db/app_db.dart';
 import '../widgets/document_card.dart';
-import 'scanner_page.dart';
+import 'scanner_page.dart' show ScannerPage, ScannerResult;
 import 'viewer_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -64,7 +64,7 @@ class _HomePageState extends State<HomePage> {
           icon: const Icon(Icons.menu),
           onPressed: () {},
         ),
-        title: const Text('PDF Scanner', style: TextStyle(fontWeight: FontWeight.w600)),
+        title: const Text('SmartPDF', style: TextStyle(fontWeight: FontWeight.w600)),
         actions: [
           IconButton(
             icon: const Icon(Icons.emoji_events, color: AppColors.crown),
@@ -163,6 +163,15 @@ class _HomePageState extends State<HomePage> {
 
   void _openCamera() async {
     final picker = ImagePicker();
+    final hasCamera = await picker.supportsImageSource(ImageSource.camera);
+    if (!hasCamera) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Camera not available on this device')),
+        );
+      }
+      return;
+    }
     final photo = await picker.pickImage(source: ImageSource.camera, imageQuality: 90);
     if (photo == null || !mounted) return;
     _navigateToScanner([photo.path]);
@@ -176,13 +185,11 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _navigateToScanner(List<String> paths) async {
-    final result = await Navigator.of(context).push<List<String>>(
+    final result = await Navigator.of(context).push<ScannerResult>(
       MaterialPageRoute(builder: (_) => ScannerPage(initialImages: paths)),
     );
-    if (result != null && result.isNotEmpty && mounted) {
-      final title = await _askRename(context, 'Document_${DateTime.now().millisecondsSinceEpoch}');
-      if (title == null) return;
-      final created = await widget.db.createDocumentFromImages(title.trim(), result);
+    if (result != null && result.images.isNotEmpty && mounted) {
+      final created = await widget.db.createDocumentFromImages(result.title, result.images);
       _loadDocs();
       final doc = await widget.db.getDocumentById(created);
       if (doc != null && mounted) {
