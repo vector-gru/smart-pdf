@@ -90,7 +90,10 @@ class _HomePageState extends State<HomePage> with DocActionsMixin {
             );
           }
           return ListView.builder(
-            padding: const EdgeInsets.only(top: AppConstants.listTopPadding, bottom: AppConstants.listBottomPadding),
+            padding: const EdgeInsets.only(
+              top: AppConstants.listTopPadding,
+              bottom: 64 + 12 + 16 + 48 + AppConstants.listBottomPadding,
+            ),
             itemCount: docs.length,
             itemBuilder: (context, index) {
               final d = docs[index];
@@ -108,69 +111,15 @@ class _HomePageState extends State<HomePage> with DocActionsMixin {
           );
         },
       ),
-      floatingActionButton: _buildFab(),
     );
-  }
-
-  Widget _buildFab() {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppConstants.fabRadius),
-        color: AppColors.primaryMuted,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: const BorderRadius.horizontal(left: Radius.circular(AppConstants.fabRadius)),
-              onTap: _openGallery,
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: AppConstants.fabPaddingH, vertical: AppConstants.fabPaddingV),
-                child: Icon(Icons.photo_library, color: Colors.white, size: AppConstants.fabIconSize),
-              ),
-            ),
-          ),
-          Container(width: AppConstants.fabDividerWidth, height: AppConstants.fabDividerHeight, color: AppColors.fabDivider),
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: const BorderRadius.horizontal(right: Radius.circular(AppConstants.fabRadius)),
-              onTap: _openCamera,
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: AppConstants.fabPaddingH, vertical: AppConstants.fabPaddingV),
-                child: Icon(Icons.camera_alt, color: Colors.white, size: AppConstants.fabIconSize),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _openCamera() async {
-    final picker = ImagePicker();
-    final hasCamera = await picker.supportsImageSource(ImageSource.camera);
-    if (!hasCamera) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Camera not available')));
-      return;
-    }
-    final photo = await picker.pickImage(source: ImageSource.camera, imageQuality: 90);
-    if (photo == null || !mounted) return;
-    _navigateToScanner([photo.path]);
   }
 
   void _openGallery() async {
     final picker = ImagePicker();
     final images = await picker.pickMultiImage(imageQuality: 90);
     if (images.isEmpty || !mounted) return;
-    _navigateToScanner(images.map((f) => f.path).toList());
-  }
-
-  void _navigateToScanner(List<String> paths) async {
     final result = await Navigator.of(context).push<ScannerResult>(
-      MaterialPageRoute(builder: (_) => ScannerPage(initialImages: paths)),
+      MaterialPageRoute(builder: (_) => ScannerPage(initialImages: images.map((f) => f.path).toList())),
     );
     if (result != null && result.images.isNotEmpty && mounted) {
       final created = await widget.db.createDocumentFromImages(result.title, result.images);
