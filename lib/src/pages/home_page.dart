@@ -1,13 +1,16 @@
-// Home page - list of saved PDFs
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
+import '../constants/app_colors.dart';
+import '../constants/app_constants.dart';
 import '../db/app_db.dart';
+import '../widgets/document_card.dart';
 import 'scanner_page.dart';
 import 'viewer_page.dart';
 
 class HomePage extends StatefulWidget {
   final AppDatabase db;
-  const HomePage({Key? key, required this.db}) : super(key: key);
+  const HomePage({super.key, required this.db});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -28,7 +31,18 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _deleteDoc(Document doc) async {
-    // delete actual file if exists, then delete DB entries
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete document?'),
+        content: Text('Are you sure you want to delete "${doc.title}"?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+    if (confirm != true) return;
     try {
       final f = File(doc.filePath);
       if (await f.exists()) await f.delete();
@@ -37,22 +51,28 @@ class _HomePageState extends State<HomePage> {
     _loadDocs();
   }
 
+  void _shareDoc(Document doc) {
+    Share.shareXFiles([XFile(doc.filePath)]);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('smart-pdf'),
+        leading: IconButton(
+          icon: const Icon(Icons.menu),
+          onPressed: () {},
+        ),
+        title: const Text('PDF Scanner', style: TextStyle(fontWeight: FontWeight.w600)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              // TODO: implement search
-            },
+            icon: const Icon(Icons.emoji_events, color: AppColors.crown),
+            onPressed: () {},
           ),
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: Center(child: Text('Premium', style: TextStyle(fontWeight: FontWeight.w600))),
-          )
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {},
+          ),
         ],
       ),
       body: FutureBuilder<List<Document>>(
@@ -67,61 +87,75 @@ class _HomePageState extends State<HomePage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('No documents yet', style: TextStyle(fontSize: 18)),
+                  Icon(Icons.picture_as_pdf, size: AppConstants.emptyIconSize, color: Colors.grey[400]),
                   const SizedBox(height: 12),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.camera_alt),
-                    label: const Text('Start a scan'),
-                    onPressed: _openScanner,
-                  ),
+                  const Text('No documents yet', style: TextStyle(fontSize: 18)),
+                  const SizedBox(height: 8),
+                  const Text('Tap the button below to scan or import', style: TextStyle(color: AppColors.textSecondary)),
                 ],
               ),
             );
           }
-          return ListView.separated(
+          return ListView.builder(
+            padding: const EdgeInsets.only(top: AppConstants.listTopPadding, bottom: AppConstants.listBottomPadding),
             itemCount: docs.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
             itemBuilder: (context, index) {
               final d = docs[index];
-              return ListTile(
-                leading: Container(
-                  width: 52,
-                  height: 68,
-                  color: Colors.grey[200],
-                  child: d.pagesCount > 0
-                      ? Image.file(File(d.thumbnailPath ?? ''), fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.picture_as_pdf))
-                      : const Icon(Icons.picture_as_pdf),
-                ),
-                title: Text(d.title),
-                subtitle: Text('${d.pagesCount} page(s)'),
+              return DocumentCard(
+                document: d,
                 onTap: () {
                   Navigator.of(context).push(MaterialPageRoute(builder: (_) => ViewerPage(pdfPath: d.filePath)));
                 },
-                trailing: PopupMenuButton<String>(
-                  onSelected: (v) async {
-                    if (v == 'delete') {
-                      await _deleteDoc(d);
-                    } else if (v == 'rename') {
-                      final newTitle = await _askRename(context, d.title);
-                      if (newTitle != null && newTitle.trim().isNotEmpty) {
-                        await widget.db.renameDocument(d.id, newTitle.trim());
-                        _loadDocs();
-                      }
-                    }
-                  },
-                  itemBuilder: (ctx) => [
-                    const PopupMenuItem(value: 'rename', child: Text('Rename')),
-                    const PopupMenuItem(value: 'delete', child: Text('Delete')),
-                  ],
-                ),
+                onShare: () => _shareDoc(d),
+                onDelete: () => _deleteDoc(d),
+                onExport: () {},
+                onMore: () => _showMoreMenu(d),
               );
             },
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _openScanner,
-        child: const Icon(Icons.add_a_photo),
+      floatingActionButton: _buildFab(),
+    );
+  }
+
+  Widget _buildFab() {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppConstants.fabRadius),
+        color: AppColors.primaryMuted,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: const BorderRadius.horizontal(left: Radius.circular(AppConstants.fabRadius)),
+              onTap: _importImages,
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: AppConstants.fabPaddingH, vertical: AppConstants.fabPaddingV),
+                child: Icon(Icons.photo_library, color: Colors.white, size: AppConstants.fabIconSize),
+              ),
+            ),
+          ),
+          Container(
+            width: AppConstants.fabDividerWidth,
+            height: AppConstants.fabDividerHeight,
+            color: AppColors.fabDivider,
+          ),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: const BorderRadius.horizontal(right: Radius.circular(AppConstants.fabRadius)),
+              onTap: _openScanner,
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: AppConstants.fabPaddingH, vertical: AppConstants.fabPaddingV),
+                child: Icon(Icons.camera_alt, color: Colors.white, size: AppConstants.fabIconSize),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -129,18 +163,46 @@ class _HomePageState extends State<HomePage> {
   void _openScanner() async {
     final result = await Navigator.of(context).push<List<String>>(MaterialPageRoute(builder: (_) => ScannerPage()));
     if (result != null && result.isNotEmpty) {
-      // Ask for a filename, create PDF, and save to DB
       final title = await _askRename(context, 'Document_${DateTime.now().millisecondsSinceEpoch}');
       if (title == null) return;
       final created = await widget.db.createDocumentFromImages(title.trim(), result);
-      // created returns document id
       _loadDocs();
-      // show the created document
       final doc = await widget.db.getDocumentById(created);
-      if (doc != null) {
+      if (doc != null && mounted) {
         Navigator.of(context).push(MaterialPageRoute(builder: (_) => ViewerPage(pdfPath: doc.filePath)));
       }
     }
+  }
+
+  void _importImages() async {
+    // TODO: image picker import flow
+  }
+
+  void _showMoreMenu(Document doc) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(leading: const Icon(Icons.edit), title: const Text('Rename'), onTap: () async {
+              Navigator.pop(ctx);
+              final newTitle = await _askRename(context, doc.title);
+              if (newTitle != null && newTitle.trim().isNotEmpty) {
+                await widget.db.renameDocument(doc.id, newTitle.trim());
+                _loadDocs();
+              }
+            }),
+            ListTile(leading: const Icon(Icons.star_outline), title: const Text('Favourite'), onTap: () {
+              Navigator.pop(ctx);
+            }),
+            ListTile(leading: const Icon(Icons.print), title: const Text('Print'), onTap: () {
+              Navigator.pop(ctx);
+            }),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<String?> _askRename(BuildContext context, String current) {
