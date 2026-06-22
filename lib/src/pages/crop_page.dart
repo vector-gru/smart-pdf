@@ -137,22 +137,73 @@ class _CropPageState extends State<CropPage> {
     });
   }
 
-  // --- Done: crop original → write working ---
+  // --- Done: perspective-warp quad → rectangle, write working ---
   Future<void> _done() async {
     final origFile = File(widget.originalPath);
     final bytes = await origFile.readAsBytes();
     final decoded = img.decodeImage(bytes);
     if (decoded == null) { if (mounted) Navigator.pop(context, true); return; }
 
-    final w = decoded.width, h = decoded.height;
-    final l = ([_tl.dx, _bl.dx].reduce((a, b) => a < b ? a : b) * w).round().clamp(0, w - 1);
-    final t = ([_tl.dy, _tr.dy].reduce((a, b) => a < b ? a : b) * h).round().clamp(0, h - 1);
-    final r = ([_tr.dx, _br.dx].reduce((a, b) => a > b ? a : b) * w).round().clamp(l + 1, w);
-    final b = ([_bl.dy, _br.dy].reduce((a, b) => a > b ? a : b) * h).round().clamp(t + 1, h);
+    final iw = decoded.width.toDouble(), ih = decoded.height.toDouble();
 
-    final cropped = img.copyCrop(decoded, x: l, y: t, width: r - l, height: b - t);
+    // Source corners in image pixels
+    final src = [
+      Offset(_tl.dx * iw, _tl.dy * ih),
+      Offset(_tr.dx * iw, _tr.dy * ih),
+      Offset(_br.dx * iw, _br.dy * ih),
+      Offset(_bl.dx * iw, _bl.dy * ih),
+    ];
+
+    // Output size = average of opposite side lengths
+    double dist(Offset a, Offset b) => (b - a).distance;
+    final outW = ((dist(src[0], src[1]) + dist(src[3], src[2])) / 2).round().clamp(1, 8000);
+    final outH = ((dist(src[0], src[3]) + dist(src[1], src[2])) / 2).round().clamp(1, 8000);
+
+    final warped = img.Image(width: outW, height: outH);
+
+    // Bilinear inverse mapping: for each dst pixel find its source in the quad.
+    // Uses bilinear (u,v) solve on the quad.
+    for (int dy = 0; dy < outH; dy++) {
+      final v = dy / (outH - 1);
+      for (int dx = 0; dx < outW; dx++) {
+        final u = dx / (outW - 1);
+        // Bilinear interpolation of the quad corners (TL,TR,BR,BL order)
+        final sx = src[0].dx * (1 - u) * (1 - v)
+                 + src[1].dx * u * (1 - v)
+                 + src[2].dx * u * v
+                 + src[3].dx * (1 - u) * v;
+        final sy = src[0].dy * (1 - u) * (1 - v)
+                 + src[1].dy * u * (1 - v)
+                 + src[2].dy * u * v
+                 + src[3].dy * (1 - u) * v;
+
+        // Bilinear sample from source
+        final x0 = sx.floor().clamp(0, decoded.width - 1);
+        final y0 = sy.floor().clamp(0, decoded.height - 1);
+        final x1 = (x0 + 1).clamp(0, decoded.width - 1);
+        final y1 = (y0 + 1).clamp(0, decoded.height - 1);
+        final fx = sx - x0, fy = sy - y0;
+
+        final c00 = decoded.getPixel(x0, y0);
+        final c10 = decoded.getPixel(x1, y0);
+        final c01 = decoded.getPixel(x0, y1);
+        final c11 = decoded.getPixel(x1, y1);
+
+        int ch(num a, num b, num c, num d) =>
+            (a * (1 - fx) * (1 - fy) + b * fx * (1 - fy) +
+             c * (1 - fx) * fy       + d * fx * fy).round().clamp(0, 255);
+
+        warped.setPixelRgba(dx, dy,
+          ch(c00.r, c10.r, c01.r, c11.r),
+          ch(c00.g, c10.g, c01.g, c11.g),
+          ch(c00.b, c10.b, c01.b, c11.b),
+          255,
+        );
+      }
+    }
+
     final workingFile = File(widget.workingPath);
-    await workingFile.writeAsBytes(img.encodeJpg(cropped, quality: 90));
+    await workingFile.writeAsBytes(img.encodeJpg(warped, quality: 90));
     await FileImage(workingFile).evict();
     if (mounted) Navigator.pop(context, true);
   }
