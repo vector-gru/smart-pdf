@@ -4,6 +4,7 @@ import '../constants/app_colors.dart';
 import '../constants/app_constants.dart';
 import '../db/app_db.dart';
 import '../db/docs_notifier.dart';
+import '../widgets/app_drawer.dart';
 import '../widgets/document_card.dart';
 import 'doc_actions.dart';
 import 'scanner_page.dart' show ScannerPage, ScannerResult;
@@ -38,7 +39,12 @@ class _HomePageState extends State<HomePage> with DocActionsMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(icon: const Icon(Icons.menu), onPressed: () {}),
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
+        ),
         title: _searchActive
             ? TextField(
                 controller: _searchController,
@@ -57,6 +63,10 @@ class _HomePageState extends State<HomePage> with DocActionsMixin {
             }),
           ),
         ],
+      ),
+      drawer: AppDrawer(
+        onImportFiles: () {},
+        onImportImages: _openGallery,
       ),
       body: ListenableBuilder(
         listenable: widget.notifier,
