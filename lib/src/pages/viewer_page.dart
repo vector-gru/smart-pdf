@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:pdfx/pdfx.dart';
+import '../db/app_db.dart';
 
 class ViewerPage extends StatefulWidget {
-  final String pdfPath;
+  final String pdfPath; // may be relative or absolute
   final String? title;
   const ViewerPage({Key? key, required this.pdfPath, this.title}) : super(key: key);
 
@@ -11,17 +12,30 @@ class ViewerPage extends StatefulWidget {
 }
 
 class _ViewerPageState extends State<ViewerPage> {
-  late final PdfControllerPinch _pdfController;
+  PdfControllerPinch? _pdfController;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    _pdfController = PdfControllerPinch(document: PdfDocument.openFile(widget.pdfPath));
+    _init();
+  }
+
+  Future<void> _init() async {
+    try {
+      final absPath = await resolveDocPath(widget.pdfPath);
+      if (!mounted) return;
+      setState(() {
+        _pdfController = PdfControllerPinch(document: PdfDocument.openFile(absPath));
+      });
+    } catch (e) {
+      if (mounted) setState(() => _error = e.toString());
+    }
   }
 
   @override
   void dispose() {
-    _pdfController.dispose();
+    _pdfController?.dispose();
     super.dispose();
   }
 
@@ -34,24 +48,23 @@ class _ViewerPageState extends State<ViewerPage> {
           children: [
             const Text('Viewer'),
             if (widget.title != null)
-              Text(
-                widget.title!,
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
-              ),
+              Text(widget.title!, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400)),
           ],
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.share), onPressed: () {
-            // TODO: implement sharing (share_plus)
-          }),
+          IconButton(icon: const Icon(Icons.share), onPressed: () {}),
         ],
       ),
-      body: PdfViewPinch(
-        controller: _pdfController,
-        padding: 4,
-        backgroundDecoration: const BoxDecoration(),
-        scrollDirection: Axis.vertical,
-      ),
+      body: _error != null
+          ? Center(child: Text('Could not open PDF:\n$_error', textAlign: TextAlign.center))
+          : _pdfController == null
+              ? const Center(child: CircularProgressIndicator())
+              : PdfViewPinch(
+                  controller: _pdfController!,
+                  padding: 4,
+                  backgroundDecoration: const BoxDecoration(),
+                  scrollDirection: Axis.vertical,
+                ),
     );
   }
 }

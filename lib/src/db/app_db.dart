@@ -9,6 +9,14 @@ import '../services/pdf_service.dart';
 
 part 'app_db.g.dart';
 
+/// Resolves a stored relative path back to an absolute path at runtime.
+/// If [stored] is already absolute (legacy data), it's returned as-is.
+Future<String> resolveDocPath(String stored) async {
+  if (p.isAbsolute(stored)) return stored;
+  final base = await getApplicationDocumentsDirectory();
+  return p.join(base.path, stored);
+}
+
 // Tables
 class Documents extends Table {
   TextColumn get id => text().clientDefault(() => const Uuid().v4())();
@@ -92,44 +100,53 @@ class AppDatabase extends _$AppDatabase {
   Future<String> createDocumentFromImages(String title, List<String> imagePaths) async {
     return transaction(() async {
       final docsDir = await getApplicationDocumentsDirectory();
-      final docFolder = Directory(p.join(docsDir.path, 'smart_pdf', 'files', const Uuid().v4()));
+      final docUuid = const Uuid().v4();
+      final docFolder = Directory(p.join(docsDir.path, 'smart_pdf', 'files', docUuid));
       await docFolder.create(recursive: true);
+
+      // Save page images and keep relative paths
       final savedImagePaths = <String>[];
+      final relativeImagePaths = <String>[];
       for (var i = 0; i < imagePaths.length; i++) {
         final src = File(imagePaths[i]);
         final dest = await src.copy(p.join(docFolder.path, 'page_${i + 1}${p.extension(imagePaths[i])}'));
         savedImagePaths.add(dest.path);
+        relativeImagePaths.add(p.relative(dest.path, from: docsDir.path));
       }
-      final fileName = title.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_');
-      final pdfPath = await PdfService.createPdfFromImages(savedImagePaths, fileName);
 
-      // Generate thumbnail from first page image
-      String? thumbnailPath;
+      final fileName = title.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_');
+      final pdfAbsPath = await PdfService.createPdfFromImages(savedImagePaths, fileName);
+      final relativePdfPath = p.relative(pdfAbsPath, from: docsDir.path);
+
+      // Generate thumbnail, store relative path
+      String? relativeThumbnailPath;
       if (savedImagePaths.isNotEmpty) {
         final thumbsDir = Directory(p.join(docsDir.path, 'smart_pdf', 'thumbs'));
         await thumbsDir.create(recursive: true);
-        final thumbFile = p.join(thumbsDir.path, '${const Uuid().v4()}.jpg');
+        final thumbAbsFile = p.join(thumbsDir.path, '${const Uuid().v4()}.jpg');
         final result = await FlutterImageCompress.compressAndGetFile(
           savedImagePaths[0],
-          thumbFile,
+          thumbAbsFile,
           minWidth: 200,
           minHeight: 260,
           quality: 75,
         );
-        thumbnailPath = result?.path;
+        if (result != null) {
+          relativeThumbnailPath = p.relative(result.path, from: docsDir.path);
+        }
       }
 
       final docId = const Uuid().v4();
       await into(documents).insert(DocumentsCompanion.insert(
         id: Value(docId),
         title: title,
-        filePath: pdfPath,
+        filePath: relativePdfPath,
         pagesCount: Value(savedImagePaths.length),
-        thumbnailPath: Value(thumbnailPath),
+        thumbnailPath: Value(relativeThumbnailPath),
       ));
 
-      for (var i = 0; i < savedImagePaths.length; i++) {
-        await into(pages).insert(PagesCompanion.insert(documentId: docId, pageIndex: i, imagePath: savedImagePaths[i]));
+      for (var i = 0; i < relativeImagePaths.length; i++) {
+        await into(pages).insert(PagesCompanion.insert(documentId: docId, pageIndex: i, imagePath: relativeImagePaths[i]));
       }
 
       return docId;

@@ -5,7 +5,7 @@ import '../constants/app_colors.dart';
 import '../constants/app_constants.dart';
 import '../db/app_db.dart';
 
-class DocumentCard extends StatelessWidget {
+class DocumentCard extends StatefulWidget {
   final Document document;
   final VoidCallback onTap;
   final VoidCallback onShare;
@@ -28,7 +28,36 @@ class DocumentCard extends StatelessWidget {
   });
 
   @override
+  State<DocumentCard> createState() => _DocumentCardState();
+}
+
+class _DocumentCardState extends State<DocumentCard> {
+  String? _resolvedThumb;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolveThumb();
+  }
+
+  @override
+  void didUpdateWidget(DocumentCard old) {
+    super.didUpdateWidget(old);
+    if (old.document.thumbnailPath != widget.document.thumbnailPath) {
+      _resolveThumb();
+    }
+  }
+
+  Future<void> _resolveThumb() async {
+    final raw = widget.document.thumbnailPath;
+    if (raw == null || raw.isEmpty) return;
+    final abs = await resolveDocPath(raw);
+    if (mounted) setState(() => _resolvedThumb = abs);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final document = widget.document;
     return Card(
       margin: const EdgeInsets.symmetric(
         horizontal: AppConstants.cardMarginH,
@@ -40,7 +69,7 @@ class DocumentCard extends StatelessWidget {
       elevation: AppConstants.cardElevation,
       color: AppColors.cardBackground,
       child: InkWell(
-        onTap: onTap,
+        onTap: widget.onTap,
         borderRadius: BorderRadius.circular(AppConstants.cardBorderRadius),
         child: Padding(
           padding: const EdgeInsets.symmetric(
@@ -85,11 +114,11 @@ class DocumentCard extends StatelessWidget {
                     const SizedBox(height: 10),
                     Row(
                       children: [
-                        _ActionIcon(icon: Icons.share_outlined, onTap: onShare),
+                        _ActionIcon(icon: Icons.share_outlined, onTap: widget.onShare),
                         SizedBox(width: AppConstants.actionIconSpacing),
-                        _ActionIcon(icon: Icons.delete_outline, onTap: onDelete),
+                        _ActionIcon(icon: Icons.delete_outline, onTap: widget.onDelete),
                         SizedBox(width: AppConstants.actionIconSpacing),
-                        _ActionIcon(icon: Icons.edit_outlined, onTap: onEdit),
+                        _ActionIcon(icon: Icons.edit_outlined, onTap: widget.onEdit),
                         SizedBox(width: AppConstants.actionIconSpacing),
                         _ActionIcon(
                           icon: Icons.more_vert,
@@ -113,6 +142,7 @@ class DocumentCard extends StatelessWidget {
   }
 
   void _showMoreSheet(BuildContext context) {
+    final document = widget.document;
     showModalBottomSheet(
       context: context,
       builder: (ctx) => SafeArea(
@@ -122,7 +152,7 @@ class DocumentCard extends StatelessWidget {
             ListTile(
               leading: const Icon(Icons.edit),
               title: const Text('Rename'),
-              onTap: () { Navigator.pop(ctx); onRename(); },
+              onTap: () { Navigator.pop(ctx); widget.onRename(); },
             ),
             ListTile(
               leading: Icon(
@@ -130,12 +160,12 @@ class DocumentCard extends StatelessWidget {
                 color: document.isFavorite ? Colors.amber[600] : null,
               ),
               title: Text(document.isFavorite ? 'Remove from Favourites' : 'Add to Favourites'),
-              onTap: () { Navigator.pop(ctx); onFavourite(); },
+              onTap: () { Navigator.pop(ctx); widget.onFavourite(); },
             ),
             ListTile(
               leading: const Icon(Icons.print),
               title: const Text('Print'),
-              onTap: () { Navigator.pop(ctx); onPrint(); },
+              onTap: () { Navigator.pop(ctx); widget.onPrint(); },
             ),
           ],
         ),
@@ -144,16 +174,15 @@ class DocumentCard extends StatelessWidget {
   }
 
   Widget _buildThumbnail() {
-    final path = document.thumbnailPath;
-    if (path != null && path.isNotEmpty) {
-      return Image.file(File(path), fit: BoxFit.cover, errorBuilder: (_, __, ___) => _pdfIcon());
+    if (_resolvedThumb != null && _resolvedThumb!.isNotEmpty) {
+      return Image.file(File(_resolvedThumb!), fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _pdfIcon());
     }
     return _pdfIcon();
   }
 
-  Widget _pdfIcon() {
-    return const Center(child: Icon(Icons.picture_as_pdf, size: 32, color: Colors.grey));
-  }
+  Widget _pdfIcon() =>
+      const Center(child: Icon(Icons.picture_as_pdf, size: 32, color: Colors.grey));
 }
 
 class _ActionIcon extends StatelessWidget {

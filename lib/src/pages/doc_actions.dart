@@ -24,17 +24,18 @@ mixin DocActionsMixin<T extends StatefulWidget> on State<T> {
       ),
     );
     if (confirm != true) return;
-    try { final f = File(doc.filePath); if (await f.exists()) await f.delete(); } catch (_) {}
+    try { final f = File(await resolveDocPath(doc.filePath)); if (await f.exists()) await f.delete(); } catch (_) {}
     await db.deleteDocumentById(doc.id);
     await notifier.reload();
   }
 
   Future<void> editDoc(Document doc) async {
-    final pages = await db.getPageImages(doc.id);
+    final rawPages = await db.getPageImages(doc.id);
+    final absImagePaths = await Future.wait(rawPages.map((p) => resolveDocPath(p.imagePath)));
     if (!mounted) return;
     final result = await Navigator.of(context).push<ScannerResult>(
       MaterialPageRoute(builder: (_) => ScannerPage(
-        initialImages: pages.map((p) => p.imagePath).toList(),
+        initialImages: absImagePaths,
         initialTitle: doc.title,
       )),
     );
@@ -45,7 +46,7 @@ mixin DocActionsMixin<T extends StatefulWidget> on State<T> {
       final updated = await db.getDocumentById(created);
       if (updated != null && mounted) {
         Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => ViewerPage(pdfPath: updated.filePath, title: updated.title),
+          builder: (_) => ViewerPage(pdfPath: updated.filePath, title: updated.title), // relative path, resolved in ViewerPage
         ));
       }
     }
@@ -76,10 +77,12 @@ mixin DocActionsMixin<T extends StatefulWidget> on State<T> {
   }
 
   Future<void> printDoc(Document doc) async {
-    await Printing.layoutPdf(onLayout: (_) => File(doc.filePath).readAsBytes());
+    final absPath = await resolveDocPath(doc.filePath);
+    await Printing.layoutPdf(onLayout: (_) => File(absPath).readAsBytes());
   }
 
-  void shareDoc(Document doc) {
-    Share.shareXFiles([XFile(doc.filePath)]);
+  void shareDoc(Document doc) async {
+    final absPath = await resolveDocPath(doc.filePath);
+    Share.shareXFiles([XFile(absPath)]);
   }
 }
