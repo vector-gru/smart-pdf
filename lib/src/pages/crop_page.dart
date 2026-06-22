@@ -40,7 +40,7 @@ class _CropPageState extends State<CropPage> {
   bool _previewing = false;
   Uint8List? _previewBytes;
 
-  bool get _ready => _origImage != null;
+  bool get _ready => _origImage != null && _displayBytes != null;
 
   // Effective width/height after rotation
   double get _imgW => (_rotateDeg == 90 || _rotateDeg == 270)
@@ -64,82 +64,128 @@ class _CropPageState extends State<CropPage> {
     _br = const Offset(0.95, 0.95);
   }
 
+  // Bytes of the original image rendered in the widget (no EXIF correction).
+  // We keep these so Image.memory and _computeWarp both see the exact same pixels.
+  Uint8List? _displayBytes;
+
   Future<void> _loadOriginal() async {
     final bytes = await File(widget.originalPath).readAsBytes();
     final decoded = img.decodeImage(bytes);
     if (decoded == null || !mounted) return;
-    setState(() => _origImage = decoded);
-    // Run auto-detect right away so handles start on the document
+    // Re-encode to strip EXIF so Flutter's Image widget won't auto-rotate the
+    // display — keeping display pixels identical to what _computeWarp reads.
+    final stripped = Uint8List.fromList(img.encodeJpg(decoded, quality: 95));
+    setState(() {
+      _origImage = decoded;
+      _displayBytes = stripped;
+    });
     _autoDetect();
   }
 
   // ── Auto edge detection ────────────────────────────────────────────────────
-  // Downsample → compute per-pixel gradient magnitude → find the outermost
-  // rows/columns that exceed a threshold → map back to handle fractions.
+  // Strategy: find the page boundary by looking for the large bright rectangle
+  // that contrasts against a darker background (desk/hand/shadow).
+  // 1. Downsample for speed.
+  // 2. Build a luminance map.
+  // 3. Scan each edge inward: find the first row/column whose average luminance
+  //    is significantly brighter than the outermost strip (background).
+  // 4. Fall back to gradient bounding-box if the luminance scan fails.
   void _autoDetect() {
     final src = _effectiveImage();
     if (src == null) return;
 
-    const ds = 4; // downsample factor for speed
+    const ds = 4;
     final sw = src.width ~/ ds, sh = src.height ~/ ds;
-    if (sw < 4 || sh < 4) return;
+    if (sw < 8 || sh < 8) return;
 
     final small = img.copyResize(src, width: sw, height: sh);
 
-    // Gradient magnitude (Sobel-lite: just horizontal + vertical diff)
-    List<List<double>> grad = List.generate(sh, (_) => List.filled(sw, 0.0));
-    for (int y = 1; y < sh - 1; y++) {
-      for (int x = 1; x < sw - 1; x++) {
-        lum(int px, int py) {
-          final p = small.getPixel(px, py);
-          return (p.r * 0.299 + p.g * 0.587 + p.b * 0.114) / 255.0;
-        }
-        final gx = lum(x + 1, y) - lum(x - 1, y);
-        final gy = lum(x, y + 1) - lum(x, y - 1);
-        grad[y][x] = math.sqrt(gx * gx + gy * gy);
-      }
+    // Build luminance grid (0..1)
+    final lum = List.generate(sh, (y) => List.generate(sw, (x) {
+      final p = small.getPixel(x, y);
+      return (p.r * 0.299 + p.g * 0.587 + p.b * 0.114) / 255.0;
+    }));
+
+    double rowAvg(int y) {
+      double s = 0;
+      for (int x = 0; x < sw; x++) { s += lum[y][x]; }
+      return s / sw;
+    }
+    double colAvg(int x) {
+      double s = 0;
+      for (int y = 0; y < sh; y++) { s += lum[y][x]; }
+      return s / sh;
     }
 
-    // Threshold: 60% of max gradient
-    double maxG = 0;
-    for (final row in grad) {
-      for (final v in row) { if (v > maxG) maxG = v; }
-    }
-    final thresh = maxG * 0.30;
+    // Sample background luminance from the outermost 3% strip on each side
+    final edgePx = math.max(1, (sh * 0.03).round());
+    final edgePxW = math.max(1, (sw * 0.03).round());
+    double bgTop = 0, bgBot = 0, bgL = 0, bgR = 0;
+    for (int i = 0; i < edgePx; i++) { bgTop += rowAvg(i); bgBot += rowAvg(sh - 1 - i); }
+    for (int i = 0; i < edgePxW; i++) { bgL += colAvg(i); bgR += colAvg(sw - 1 - i); }
+    bgTop /= edgePx; bgBot /= edgePx; bgL /= edgePxW; bgR /= edgePxW;
 
-    // Find tight bounding box of strong-edge pixels
-    int left = sw, right = 0, top = sh, bottom = 0;
+    // A row/col is "page" when its avg luminance exceeds background by threshold
+    const lumThresh = 0.10; // page must be ≥10% brighter than background strip
+
+    // Scan from each edge inward to find where the page starts
+    int top = 0, bottom = sh - 1, left = 0, right = sw - 1;
     for (int y = 0; y < sh; y++) {
-      for (int x = 0; x < sw; x++) {
-        if (grad[y][x] >= thresh) {
-          if (x < left)   left   = x;
-          if (x > right)  right  = x;
-          if (y < top)    top    = y;
-          if (y > bottom) bottom = y;
-        }
-      }
+      if (rowAvg(y) > bgTop + lumThresh) { top = y; break; }
+    }
+    for (int y = sh - 1; y >= 0; y--) {
+      if (rowAvg(y) > bgBot + lumThresh) { bottom = y; break; }
+    }
+    for (int x = 0; x < sw; x++) {
+      if (colAvg(x) > bgL + lumThresh) { left = x; break; }
+    }
+    for (int x = sw - 1; x >= 0; x--) {
+      if (colAvg(x) > bgR + lumThresh) { right = x; break; }
     }
 
-    // Reject if detection is too small (< 20% of image) — keep defaults
-    if ((right - left) < sw * 0.20 || (bottom - top) < sh * 0.20) return;
+    // If luminance scan found almost nothing, fall back to gradient bbox
+    final lumOk = (right - left) > sw * 0.20 && (bottom - top) > sh * 0.20;
+    if (!lumOk) {
+      // Gradient fallback
+      final grad = List.generate(sh, (_) => List.filled(sw, 0.0));
+      for (int y = 1; y < sh - 1; y++) {
+        for (int x = 1; x < sw - 1; x++) {
+          final gx = lum[y][x + 1] - lum[y][x - 1];
+          final gy = lum[y + 1][x] - lum[y - 1][x];
+          grad[y][x] = math.sqrt(gx * gx + gy * gy);
+        }
+      }
+      double maxG = 0;
+      for (final row in grad) { for (final v in row) { if (v > maxG) maxG = v; } }
+      final thresh = maxG * 0.30;
+      left = sw; right = 0; top = sh; bottom = 0;
+      for (int y = 0; y < sh; y++) {
+        for (int x = 0; x < sw; x++) {
+          if (grad[y][x] >= thresh) {
+            if (x < left)   left   = x;
+            if (x > right)  right  = x;
+            if (y < top)    top    = y;
+            if (y > bottom) bottom = y;
+          }
+        }
+      }
+      if ((right - left) < sw * 0.20 || (bottom - top) < sh * 0.20) return;
+    }
 
-    // Add a small inward margin so handles sit just inside the content
-    const margin = 0.01;
+    // Tiny inward margin so handles sit just inside the detected boundary
+    const margin = 0.008;
     final l = (left   / sw).clamp(0.0, 1.0) + margin;
     final r = (right  / sw).clamp(0.0, 1.0) - margin;
     final t = (top    / sh).clamp(0.0, 1.0) + margin;
     final b = (bottom / sh).clamp(0.0, 1.0) - margin;
 
-    if (r <= l || b <= t) return;
-
-    if (mounted) {
-      setState(() {
-        _tl = Offset(l, t);
-        _tr = Offset(r, t);
-        _bl = Offset(l, b);
-        _br = Offset(r, b);
-      });
-    }
+    if (r <= l || b <= t || !mounted) return;
+    setState(() {
+      _tl = Offset(l, t);
+      _tr = Offset(r, t);
+      _bl = Offset(l, b);
+      _br = Offset(r, b);
+    });
   }
 
   // ── Rotation ───────────────────────────────────────────────────────────────
@@ -251,11 +297,12 @@ class _CropPageState extends State<CropPage> {
     if (mounted) Navigator.pop(context, true);
   }
 
-  // ── Rect of image inside its container (BoxFit.contain) ───────────────────
+  // ── Rect of image inside its container (BoxFit.contain + padding) ──────────
+  static const _kPad = 20.0; // px breathing room on each side
   Rect _imgRect(Size container) {
-    final scale = (_imgW / container.width > _imgH / container.height)
-        ? container.width / _imgW
-        : container.height / _imgH;
+    final avW = container.width  - _kPad * 2;
+    final avH = container.height - _kPad * 2;
+    final scale = (_imgW / avW > _imgH / avH) ? avW / _imgW : avH / _imgH;
     final dw = _imgW * scale, dh = _imgH * scale;
     return Rect.fromLTWH(
       (container.width  - dw) / 2,
@@ -392,16 +439,16 @@ class _CropPageState extends State<CropPage> {
       final imgRect = _imgRect(containerSize);
       final handles = _handles(imgRect);
 
-      // Build the image to display: original rotated via _rotateDeg
+      // Always render from in-memory bytes (EXIF stripped) so the displayed
+      // pixels are identical to what _computeWarp reads — no silent auto-rotation.
       Widget imageWidget;
       if (_rotateDeg == 0) {
-        imageWidget = Image.file(
-          File(widget.originalPath),
+        imageWidget = Image.memory(
+          _displayBytes!,
           key: const ValueKey('orig'),
           fit: BoxFit.contain,
         );
       } else {
-        // Render rotated in-memory bytes so the widget shows the correct orientation
         final rotated = _effectiveImage()!;
         final bytes = Uint8List.fromList(img.encodeJpg(rotated, quality: 85));
         imageWidget = Image.memory(

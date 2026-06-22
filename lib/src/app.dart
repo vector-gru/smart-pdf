@@ -1,3 +1,4 @@
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'constants/app_colors.dart';
 import 'constants/app_constants.dart';
@@ -7,7 +8,7 @@ import 'pages/home_page.dart';
 import 'pages/files_page.dart';
 import 'pages/recent_page.dart';
 import 'pages/favourite_page.dart';
-import 'pages/scanner_page.dart' show ScannerPage, ScannerResult;
+import 'pages/scanner_page.dart' show ScannerPage, ScannerResult, CameraCapturePage;
 import 'pages/viewer_page.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -186,19 +187,27 @@ class _ScanFab extends StatelessWidget {
 
   void _openGallery(BuildContext context) async {
     final images = await ImagePicker().pickMultiImage(imageQuality: 90);
-    if (images.isEmpty) return;
+    if (images.isEmpty || !context.mounted) return;
     _navigate(context, images.map((f) => f.path).toList());
   }
 
   void _openCamera(BuildContext context) async {
-    final picker = ImagePicker();
-    if (!await picker.supportsImageSource(ImageSource.camera)) return;
-    final photo = await picker.pickImage(source: ImageSource.camera, imageQuality: 90);
-    if (photo == null) return;
-    _navigate(context, [photo.path]);
+    final cameras = await availableCameras();
+    final rear = cameras.firstWhere(
+      (c) => c.lensDirection == CameraLensDirection.back,
+      orElse: () => cameras.first,
+    );
+    if (!context.mounted) return;
+    final path = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => CameraCapturePage(camera: rear)),
+    );
+    if (path == null) return;
+    if (!context.mounted) return;
+    _navigate(context, [path]);
   }
 
   void _navigate(BuildContext context, List<String> paths) async {
+    if (!context.mounted) return;
     final result = await Navigator.of(context).push<ScannerResult>(
       MaterialPageRoute(builder: (_) => ScannerPage(initialImages: paths)),
     );
