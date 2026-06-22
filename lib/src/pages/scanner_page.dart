@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:image/image.dart' as img;
 import 'crop_page.dart';
+import 'reorder_page.dart';
 
 class ScannerResult {
   final String title;
@@ -441,9 +442,16 @@ class _ScannerPageState extends State<ScannerPage> {
     setState(() {});
   }
 
-  void _reorderPages() {
+  void _reorderPages() async {
     if (_images.length < 2) return;
-    // TODO: open reorder UI
+    final result = await Navigator.of(context).push<List<String>>(
+      MaterialPageRoute(builder: (_) => ReorderPage(images: List.of(_images))),
+    );
+    if (result != null) {
+      setState(() => _images
+        ..clear()
+        ..addAll(result));
+    }
   }
 
   void _deleteCurrent() async {
