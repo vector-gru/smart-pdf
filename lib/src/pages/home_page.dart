@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:share_plus/share_plus.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_constants.dart';
@@ -132,7 +133,7 @@ class _HomePageState extends State<HomePage> {
             color: Colors.transparent,
             child: InkWell(
               borderRadius: const BorderRadius.horizontal(left: Radius.circular(AppConstants.fabRadius)),
-              onTap: _importImages,
+              onTap: _openGallery,
               child: const Padding(
                 padding: EdgeInsets.symmetric(horizontal: AppConstants.fabPaddingH, vertical: AppConstants.fabPaddingV),
                 child: Icon(Icons.photo_library, color: Colors.white, size: AppConstants.fabIconSize),
@@ -148,7 +149,7 @@ class _HomePageState extends State<HomePage> {
             color: Colors.transparent,
             child: InkWell(
               borderRadius: const BorderRadius.horizontal(right: Radius.circular(AppConstants.fabRadius)),
-              onTap: _openScanner,
+              onTap: _openCamera,
               child: const Padding(
                 padding: EdgeInsets.symmetric(horizontal: AppConstants.fabPaddingH, vertical: AppConstants.fabPaddingV),
                 child: Icon(Icons.camera_alt, color: Colors.white, size: AppConstants.fabIconSize),
@@ -160,9 +161,25 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _openScanner() async {
-    final result = await Navigator.of(context).push<List<String>>(MaterialPageRoute(builder: (_) => ScannerPage()));
-    if (result != null && result.isNotEmpty) {
+  void _openCamera() async {
+    final picker = ImagePicker();
+    final photo = await picker.pickImage(source: ImageSource.camera, imageQuality: 90);
+    if (photo == null || !mounted) return;
+    _navigateToScanner([photo.path]);
+  }
+
+  void _openGallery() async {
+    final picker = ImagePicker();
+    final images = await picker.pickMultiImage(imageQuality: 90);
+    if (images.isEmpty || !mounted) return;
+    _navigateToScanner(images.map((f) => f.path).toList());
+  }
+
+  void _navigateToScanner(List<String> paths) async {
+    final result = await Navigator.of(context).push<List<String>>(
+      MaterialPageRoute(builder: (_) => ScannerPage(initialImages: paths)),
+    );
+    if (result != null && result.isNotEmpty && mounted) {
       final title = await _askRename(context, 'Document_${DateTime.now().millisecondsSinceEpoch}');
       if (title == null) return;
       final created = await widget.db.createDocumentFromImages(title.trim(), result);
@@ -172,10 +189,6 @@ class _HomePageState extends State<HomePage> {
         Navigator.of(context).push(MaterialPageRoute(builder: (_) => ViewerPage(pdfPath: doc.filePath)));
       }
     }
-  }
-
-  void _importImages() async {
-    // TODO: image picker import flow
   }
 
   void _showMoreMenu(Document doc) {

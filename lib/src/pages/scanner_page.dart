@@ -5,12 +5,11 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
-/// Simple scanner page:
-/// - pick images from camera or gallery
-/// - optional crop per-image
-/// - returns saved image file paths (List<String>) when user taps SAVE
+/// Scanner page:
+/// Accepts initial image paths, allows crop/reorder/add more, returns final paths.
 class ScannerPage extends StatefulWidget {
-  const ScannerPage({Key? key}) : super(key: key);
+  final List<String> initialImages;
+  const ScannerPage({Key? key, this.initialImages = const []}) : super(key: key);
 
   @override
   State<ScannerPage> createState() => _ScannerPageState();
@@ -18,6 +17,12 @@ class ScannerPage extends StatefulWidget {
 
 class _ScannerPageState extends State<ScannerPage> {
   final List<String> _images = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _images.addAll(widget.initialImages);
+  }
   final _picker = ImagePicker();
 
   Future<void> _pickFromCamera() async {
