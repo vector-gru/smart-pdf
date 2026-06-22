@@ -1,15 +1,197 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import '../constants/app_colors.dart';
+import '../constants/app_constants.dart';
 import '../db/app_db.dart';
+import '../db/docs_notifier.dart';
+import '../widgets/document_card.dart';
+import 'doc_actions.dart';
+import 'scanner_page.dart' show ScannerPage, ScannerResult;
+import 'viewer_page.dart';
 
-class FilesPage extends StatelessWidget {
+class FilesPage extends StatefulWidget {
   final AppDatabase db;
-  const FilesPage({Key? key, required this.db}) : super(key: key);
+  final DocsNotifier notifier;
+  const FilesPage({Key? key, required this.db, required this.notifier}) : super(key: key);
+
+  @override
+  State<FilesPage> createState() => _FilesPageState();
+}
+
+class _FilesPageState extends State<FilesPage> with DocActionsMixin {
+  bool _searchActive = false;
+  String _searchQuery = '';
+  final _searchController = TextEditingController();
+
+  @override
+  AppDatabase get db => widget.db;
+  @override
+  DocsNotifier get notifier => widget.notifier;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Files')),
-      body: const Center(child: Text('Files', style: TextStyle(fontSize: 18))),
+      appBar: AppBar(
+        leading: IconButton(icon: const Icon(Icons.menu), onPressed: () {}),
+        title: _searchActive
+            ? TextField(
+                controller: _searchController,
+                autofocus: true,
+                decoration: const InputDecoration(hintText: 'Search documents…', border: InputBorder.none),
+                onChanged: (v) => setState(() => _searchQuery = v),
+              )
+            : const Text('Files', style: TextStyle(fontWeight: FontWeight.w600)),
+        actions: [
+          IconButton(icon: const Icon(Icons.emoji_events, color: AppColors.crown), onPressed: () {}),
+          IconButton(
+            icon: Icon(_searchActive ? Icons.close : Icons.search),
+            onPressed: () => setState(() {
+              _searchActive = !_searchActive;
+              if (!_searchActive) { _searchQuery = ''; _searchController.clear(); }
+            }),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          _buildMenuRow(Icons.folder_outlined, 'Browse more files', () {}),
+          const Divider(height: 1),
+          _buildMenuRow(Icons.add_to_drive_outlined, 'Sync with Google Drive', () {}),
+          const Divider(height: 1),
+          Expanded(
+            child: ListenableBuilder(
+              listenable: widget.notifier,
+              builder: (context, _) {
+                final allDocs = widget.notifier.all;
+                final docs = _searchQuery.isEmpty
+                    ? allDocs
+                    : allDocs.where((d) => d.title.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+                if (docs.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.inbox_outlined, size: 80, color: Colors.blue[100]),
+                        const SizedBox(height: 16),
+                        const Text('No files yet', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 8),
+                        const Text('Start adding PDF files to build your digital library!',
+                            textAlign: TextAlign.center, style: TextStyle(color: AppColors.textSecondary)),
+                      ],
+                    ),
+                  );
+                }
+                return ListView.builder(
+                  padding: const EdgeInsets.only(top: AppConstants.listTopPadding, bottom: AppConstants.listBottomPadding),
+                  itemCount: docs.length,
+                  itemBuilder: (context, index) {
+                    final d = docs[index];
+                    return DocumentCard(
+                      document: d,
+                      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ViewerPage(pdfPath: d.filePath, title: d.title))),
+                      onShare: () => shareDoc(d),
+                      onDelete: () => deleteDoc(d),
+                      onEdit: () => editDoc(d),
+                      onFavourite: () => toggleFavourite(d),
+                      onRename: () => renameDoc(d),
+                      onPrint: () => printDoc(d),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: _buildFab(),
     );
+  }
+
+  Widget _buildMenuRow(IconData icon, String label, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Row(
+          children: [
+            Icon(icon, size: 26, color: AppColors.textSecondary),
+            const SizedBox(width: 16),
+            Expanded(child: Text(label, style: const TextStyle(fontSize: 15))),
+            const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFab() {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppConstants.fabRadius),
+        color: AppColors.primaryMuted,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: const BorderRadius.horizontal(left: Radius.circular(AppConstants.fabRadius)),
+              onTap: _openGallery,
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: AppConstants.fabPaddingH, vertical: AppConstants.fabPaddingV),
+                child: Icon(Icons.photo_library, color: Colors.white, size: AppConstants.fabIconSize),
+              ),
+            ),
+          ),
+          Container(width: AppConstants.fabDividerWidth, height: AppConstants.fabDividerHeight, color: AppColors.fabDivider),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: const BorderRadius.horizontal(right: Radius.circular(AppConstants.fabRadius)),
+              onTap: _openCamera,
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: AppConstants.fabPaddingH, vertical: AppConstants.fabPaddingV),
+                child: Icon(Icons.camera_alt, color: Colors.white, size: AppConstants.fabIconSize),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openGallery() async {
+    final picker = ImagePicker();
+    final images = await picker.pickMultiImage(imageQuality: 90);
+    if (images.isEmpty || !mounted) return;
+    _navigateToScanner(images.map((f) => f.path).toList());
+  }
+
+  void _openCamera() async {
+    final picker = ImagePicker();
+    final photo = await picker.pickImage(source: ImageSource.camera, imageQuality: 90);
+    if (photo == null || !mounted) return;
+    _navigateToScanner([photo.path]);
+  }
+
+  void _navigateToScanner(List<String> paths) async {
+    final result = await Navigator.of(context).push<ScannerResult>(
+      MaterialPageRoute(builder: (_) => ScannerPage(initialImages: paths)),
+    );
+    if (result != null && result.images.isNotEmpty && mounted) {
+      final created = await widget.db.createDocumentFromImages(result.title, result.images);
+      await notifier.reload();
+      final doc = await widget.db.getDocumentById(created);
+      if (doc != null && mounted) {
+        Navigator.of(context).push(MaterialPageRoute(builder: (_) => ViewerPage(pdfPath: doc.filePath, title: doc.title)));
+      }
+    }
   }
 }

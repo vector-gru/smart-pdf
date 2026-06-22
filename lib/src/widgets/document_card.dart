@@ -10,8 +10,10 @@ class DocumentCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onShare;
   final VoidCallback onDelete;
-  final VoidCallback onExport;
-  final VoidCallback onMore;
+  final VoidCallback onEdit;
+  final VoidCallback onFavourite;
+  final VoidCallback onRename;
+  final VoidCallback onPrint;
 
   const DocumentCard({
     super.key,
@@ -19,8 +21,10 @@ class DocumentCard extends StatelessWidget {
     required this.onTap,
     required this.onShare,
     required this.onDelete,
-    required this.onExport,
-    required this.onMore,
+    required this.onEdit,
+    required this.onFavourite,
+    required this.onRename,
+    required this.onPrint,
   });
 
   @override
@@ -85,16 +89,55 @@ class DocumentCard extends StatelessWidget {
                         SizedBox(width: AppConstants.actionIconSpacing),
                         _ActionIcon(icon: Icons.delete_outline, onTap: onDelete),
                         SizedBox(width: AppConstants.actionIconSpacing),
-                        _ActionIcon(icon: Icons.photo_library_outlined, onTap: onExport),
+                        _ActionIcon(icon: Icons.edit_outlined, onTap: onEdit),
                         SizedBox(width: AppConstants.actionIconSpacing),
-                        _ActionIcon(icon: Icons.more_vert, onTap: onMore),
+                        _ActionIcon(
+                          icon: Icons.more_vert,
+                          onTap: () => _showMoreSheet(context),
+                        ),
                       ],
                     ),
                   ],
                 ),
               ),
+              if (document.isFavorite)
+                Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: Icon(Icons.star, size: 18, color: Colors.amber[600]),
+                ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  void _showMoreSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.edit),
+              title: const Text('Rename'),
+              onTap: () { Navigator.pop(ctx); onRename(); },
+            ),
+            ListTile(
+              leading: Icon(
+                document.isFavorite ? Icons.star : Icons.star_outline,
+                color: document.isFavorite ? Colors.amber[600] : null,
+              ),
+              title: Text(document.isFavorite ? 'Remove from Favourites' : 'Add to Favourites'),
+              onTap: () { Navigator.pop(ctx); onFavourite(); },
+            ),
+            ListTile(
+              leading: const Icon(Icons.print),
+              title: const Text('Print'),
+              onTap: () { Navigator.pop(ctx); onPrint(); },
+            ),
+          ],
         ),
       ),
     );

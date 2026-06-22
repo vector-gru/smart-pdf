@@ -15,7 +15,8 @@ class ScannerResult {
 
 class ScannerPage extends StatefulWidget {
   final List<String> initialImages;
-  const ScannerPage({super.key, this.initialImages = const []});
+  final String? initialTitle;
+  const ScannerPage({super.key, this.initialImages = const [], this.initialTitle});
 
   @override
   State<ScannerPage> createState() => _ScannerPageState();
@@ -40,8 +41,12 @@ class _ScannerPageState extends State<ScannerPage> {
     super.initState();
     _images.addAll(widget.initialImages);
     _pageController = PageController(viewportFraction: 0.85);
-    final now = DateTime.now();
-    _title = 'SmartPDF ${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year.toString().substring(2)} ${now.hour}.${now.minute.toString().padLeft(2, '0')}.${now.second.toString().padLeft(2, '0')}';
+    if (widget.initialTitle != null && widget.initialTitle!.isNotEmpty) {
+      _title = widget.initialTitle!;
+    } else {
+      final now = DateTime.now();
+      _title = 'SmartPDF ${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year.toString().substring(2)} ${now.hour}.${now.minute.toString().padLeft(2, '0')}.${now.second.toString().padLeft(2, '0')}';
+    }
     _titleController = TextEditingController(text: _title);
     _titleFocus.addListener(() {
       if (!_titleFocus.hasFocus && _editingTitle) {

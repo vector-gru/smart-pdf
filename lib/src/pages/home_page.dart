@@ -1,33 +1,32 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:share_plus/share_plus.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_constants.dart';
 import '../db/app_db.dart';
+import '../db/docs_notifier.dart';
 import '../widgets/document_card.dart';
+import 'doc_actions.dart';
 import 'scanner_page.dart' show ScannerPage, ScannerResult;
 import 'viewer_page.dart';
 
 class HomePage extends StatefulWidget {
   final AppDatabase db;
-  const HomePage({super.key, required this.db});
+  final DocsNotifier notifier;
+  const HomePage({super.key, required this.db, required this.notifier});
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
-  Future<List<Document>>? _docsFuture;
+class _HomePageState extends State<HomePage> with DocActionsMixin {
   bool _searchActive = false;
   String _searchQuery = '';
   final _searchController = TextEditingController();
 
   @override
-  void initState() {
-    super.initState();
-    _loadDocs();
-  }
+  AppDatabase get db => widget.db;
+  @override
+  DocsNotifier get notifier => widget.notifier;
 
   @override
   void dispose() {
@@ -35,79 +34,34 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-  void _loadDocs() {
-    _docsFuture = widget.db.getAllDocuments();
-    setState(() {});
-  }
-
-  Future<void> _deleteDoc(Document doc) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete document?'),
-        content: Text('Are you sure you want to delete "${doc.title}"?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
-        ],
-      ),
-    );
-    if (confirm != true) return;
-    try {
-      final f = File(doc.filePath);
-      if (await f.exists()) await f.delete();
-    } catch (_) {}
-    await widget.db.deleteDocumentById(doc.id);
-    _loadDocs();
-  }
-
-  void _shareDoc(Document doc) {
-    Share.shareXFiles([XFile(doc.filePath)]);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.menu),
-          onPressed: () {},
-        ),
+        leading: IconButton(icon: const Icon(Icons.menu), onPressed: () {}),
         title: _searchActive
             ? TextField(
                 controller: _searchController,
                 autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: 'Search documents…',
-                  border: InputBorder.none,
-                ),
+                decoration: const InputDecoration(hintText: 'Search documents…', border: InputBorder.none),
                 onChanged: (v) => setState(() => _searchQuery = v),
               )
             : const Text('SmartPDF', style: TextStyle(fontWeight: FontWeight.w600)),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.emoji_events, color: AppColors.crown),
-            onPressed: () {},
-          ),
+          IconButton(icon: const Icon(Icons.emoji_events, color: AppColors.crown), onPressed: () {}),
           IconButton(
             icon: Icon(_searchActive ? Icons.close : Icons.search),
             onPressed: () => setState(() {
               _searchActive = !_searchActive;
-              if (!_searchActive) {
-                _searchQuery = '';
-                _searchController.clear();
-              }
+              if (!_searchActive) { _searchQuery = ''; _searchController.clear(); }
             }),
           ),
         ],
       ),
-      body: FutureBuilder<List<Document>>(
-        future: _docsFuture,
-        builder: (context, snap) {
-          if (snap.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final allDocs = snap.data ?? [];
+      body: ListenableBuilder(
+        listenable: widget.notifier,
+        builder: (context, _) {
+          final allDocs = widget.notifier.all;
           final docs = _searchQuery.isEmpty
               ? allDocs
               : allDocs.where((d) => d.title.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
@@ -132,13 +86,13 @@ class _HomePageState extends State<HomePage> {
               final d = docs[index];
               return DocumentCard(
                 document: d,
-                onTap: () {
-                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => ViewerPage(pdfPath: d.filePath, title: d.title)));
-                },
-                onShare: () => _shareDoc(d),
-                onDelete: () => _deleteDoc(d),
-                onExport: () {},
-                onMore: () => _showMoreMenu(d),
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ViewerPage(pdfPath: d.filePath, title: d.title))),
+                onShare: () => shareDoc(d),
+                onDelete: () => deleteDoc(d),
+                onEdit: () => editDoc(d),
+                onFavourite: () => toggleFavourite(d),
+                onRename: () => renameDoc(d),
+                onPrint: () => printDoc(d),
               );
             },
           );
@@ -168,11 +122,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-          Container(
-            width: AppConstants.fabDividerWidth,
-            height: AppConstants.fabDividerHeight,
-            color: AppColors.fabDivider,
-          ),
+          Container(width: AppConstants.fabDividerWidth, height: AppConstants.fabDividerHeight, color: AppColors.fabDivider),
           Material(
             color: Colors.transparent,
             child: InkWell(
@@ -193,11 +143,7 @@ class _HomePageState extends State<HomePage> {
     final picker = ImagePicker();
     final hasCamera = await picker.supportsImageSource(ImageSource.camera);
     if (!hasCamera) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Camera not available on this device')),
-        );
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Camera not available')));
       return;
     }
     final photo = await picker.pickImage(source: ImageSource.camera, imageQuality: 90);
@@ -218,53 +164,11 @@ class _HomePageState extends State<HomePage> {
     );
     if (result != null && result.images.isNotEmpty && mounted) {
       final created = await widget.db.createDocumentFromImages(result.title, result.images);
-      _loadDocs();
+      await notifier.reload();
       final doc = await widget.db.getDocumentById(created);
       if (doc != null && mounted) {
         Navigator.of(context).push(MaterialPageRoute(builder: (_) => ViewerPage(pdfPath: doc.filePath, title: doc.title)));
       }
     }
-  }
-
-  void _showMoreMenu(Document doc) {
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(leading: const Icon(Icons.edit), title: const Text('Rename'), onTap: () async {
-              Navigator.pop(ctx);
-              final newTitle = await _askRename(context, doc.title);
-              if (newTitle != null && newTitle.trim().isNotEmpty) {
-                await widget.db.renameDocument(doc.id, newTitle.trim());
-                _loadDocs();
-              }
-            }),
-            ListTile(leading: const Icon(Icons.star_outline), title: const Text('Favourite'), onTap: () {
-              Navigator.pop(ctx);
-            }),
-            ListTile(leading: const Icon(Icons.print), title: const Text('Print'), onTap: () {
-              Navigator.pop(ctx);
-            }),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<String?> _askRename(BuildContext context, String current) {
-    final ctr = TextEditingController(text: current);
-    return showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Document name'),
-        content: TextField(controller: ctr, decoration: const InputDecoration(labelText: 'Name')),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
-          ElevatedButton(onPressed: () => Navigator.of(ctx).pop(ctr.text), child: const Text('Save')),
-        ],
-      ),
-    );
   }
 }

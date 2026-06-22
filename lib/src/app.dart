@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'constants/app_colors.dart';
 import 'db/app_db.dart';
+import 'db/docs_notifier.dart';
 import 'pages/home_page.dart';
 import 'pages/files_page.dart';
+import 'pages/recent_page.dart';
+import 'pages/favourite_page.dart';
 
 class AppShell extends StatefulWidget {
   final AppDatabase db;
@@ -14,24 +17,31 @@ class AppShell extends StatefulWidget {
 
 class _AppShellState extends State<AppShell> {
   int _currentIndex = 0;
-
-  late final List<Widget> _pages;
+  late final DocsNotifier _notifier;
 
   @override
   void initState() {
     super.initState();
-    _pages = [
-      HomePage(db: widget.db),
-      FilesPage(db: widget.db),
-      _PlaceholderPage(title: 'Recent'),
-      _PlaceholderPage(title: 'Favourite'),
-    ];
+    _notifier = DocsNotifier(widget.db);
+    _notifier.reload();
+  }
+
+  @override
+  void dispose() {
+    _notifier.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final pages = [
+      HomePage(db: widget.db, notifier: _notifier),
+      FilesPage(db: widget.db, notifier: _notifier),
+      RecentPage(notifier: _notifier),
+      FavouritePage(notifier: _notifier),
+    ];
     return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: _pages),
+      body: IndexedStack(index: _currentIndex, children: pages),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (i) => setState(() => _currentIndex = i),
@@ -45,19 +55,6 @@ class _AppShellState extends State<AppShell> {
           BottomNavigationBarItem(icon: Icon(Icons.star), label: 'Favourite'),
         ],
       ),
-    );
-  }
-}
-
-class _PlaceholderPage extends StatelessWidget {
-  final String title;
-  const _PlaceholderPage({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(child: Text(title, style: const TextStyle(fontSize: 18))),
     );
   }
 }

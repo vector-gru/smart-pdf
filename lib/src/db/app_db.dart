@@ -49,6 +49,29 @@ class AppDatabase extends _$AppDatabase {
     return (select(documents)..orderBy([(t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc)])).get();
   }
 
+  Future<List<Document>> getRecentDocuments({int limit = 20}) {
+    return (select(documents)
+      ..orderBy([(t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc)])
+      ..limit(limit)).get();
+  }
+
+  Future<List<Document>> getFavouriteDocuments() {
+    return (select(documents)
+      ..where((d) => d.isFavorite.equals(true))
+      ..orderBy([(t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc)])).get();
+  }
+
+  Future<void> toggleFavourite(String id, bool value) async {
+    await (update(documents)..where((d) => d.id.equals(id)))
+        .write(DocumentsCompanion(isFavorite: Value(value), updatedAt: Value(DateTime.now())));
+  }
+
+  Future<List<Page>> getPageImages(String documentId) {
+    return (select(pages)
+      ..where((p) => p.documentId.equals(documentId))
+      ..orderBy([(p) => OrderingTerm(expression: p.pageIndex)])).get();
+  }
+
   Future<Document?> getDocumentById(String id) {
     return (select(documents)..where((d) => d.id.equals(id))).getSingleOrNull();
   }
