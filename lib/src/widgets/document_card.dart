@@ -129,11 +129,26 @@ class _DocumentCardState extends State<DocumentCard> {
                   ],
                 ),
               ),
-              if (document.isFavorite)
-                Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: Icon(Icons.star, size: 18, color: Colors.amber[600]),
-                ),
+              IconButton(
+              padding: const EdgeInsets.only(left: 4),
+              constraints: const BoxConstraints(),
+              icon: Icon(
+                document.isFavorite ? Icons.star : Icons.star_outline,
+                size: 22,
+                color: document.isFavorite ? Colors.amber[600] : Colors.grey,
+              ),
+              onPressed: () {
+                widget.onFavourite();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(document.isFavorite
+                        ? 'Removed from favourites'
+                        : 'Added to favourites'),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              },
+            ),
             ],
           ),
         ),
@@ -154,14 +169,7 @@ class _DocumentCardState extends State<DocumentCard> {
               title: const Text('Rename'),
               onTap: () { Navigator.pop(ctx); widget.onRename(); },
             ),
-            ListTile(
-              leading: Icon(
-                document.isFavorite ? Icons.star : Icons.star_outline,
-                color: document.isFavorite ? Colors.amber[600] : null,
-              ),
-              title: Text(document.isFavorite ? 'Remove from Favourites' : 'Add to Favourites'),
-              onTap: () { Navigator.pop(ctx); widget.onFavourite(); },
-            ),
+
             ListTile(
               leading: const Icon(Icons.print),
               title: const Text('Print'),
