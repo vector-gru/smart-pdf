@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pdfx/pdfx.dart';
+import 'package:share_plus/share_plus.dart';
 import '../db/app_db.dart';
 
 class ViewerPage extends StatefulWidget {
@@ -14,6 +15,7 @@ class ViewerPage extends StatefulWidget {
 class _ViewerPageState extends State<ViewerPage> {
   PdfControllerPinch? _pdfController;
   String? _error;
+  final _shareKey = GlobalKey();
 
   @override
   void initState() {
@@ -31,6 +33,19 @@ class _ViewerPageState extends State<ViewerPage> {
     } catch (e) {
       if (mounted) setState(() => _error = e.toString());
     }
+  }
+
+  Future<void> _share() async {
+    final absPath = await resolveDocPath(widget.pdfPath);
+    final box = _shareKey.currentContext?.findRenderObject() as RenderBox?;
+    final origin = box != null
+        ? box.localToGlobal(Offset.zero) & box.size
+        : Rect.fromLTWH(0, 0, 100, 100);
+    Share.shareXFiles(
+      [XFile(absPath, mimeType: 'application/pdf')],
+      subject: widget.title,
+      sharePositionOrigin: origin,
+    );
   }
 
   @override
@@ -52,7 +67,7 @@ class _ViewerPageState extends State<ViewerPage> {
           ],
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.share), onPressed: () {}),
+          IconButton(key: _shareKey, icon: const Icon(Icons.share), onPressed: _share),
         ],
       ),
       body: _error != null

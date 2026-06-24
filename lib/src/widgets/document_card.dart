@@ -8,7 +8,7 @@ import '../db/app_db.dart';
 class DocumentCard extends StatefulWidget {
   final Document document;
   final VoidCallback onTap;
-  final VoidCallback onShare;
+  final void Function(Rect shareRect) onShare;
   final VoidCallback onDelete;
   final VoidCallback onEdit;
   final VoidCallback onFavourite;
@@ -33,6 +33,7 @@ class DocumentCard extends StatefulWidget {
 
 class _DocumentCardState extends State<DocumentCard> {
   String? _resolvedThumb;
+  final _shareKey = GlobalKey();
 
   @override
   void initState() {
@@ -114,7 +115,13 @@ class _DocumentCardState extends State<DocumentCard> {
                     const SizedBox(height: 10),
                     Row(
                       children: [
-                        _ActionIcon(icon: Icons.share_outlined, onTap: widget.onShare),
+                        _ActionIcon(key: _shareKey, icon: Icons.share_outlined, onTap: () {
+                          final box = _shareKey.currentContext?.findRenderObject() as RenderBox?;
+                          final rect = box != null
+                              ? box.localToGlobal(Offset.zero) & box.size
+                              : Rect.fromLTWH(0, 0, 100, 100);
+                          widget.onShare(rect);
+                        }),
                         SizedBox(width: AppConstants.actionIconSpacing),
                         _ActionIcon(icon: Icons.delete_outline, onTap: widget.onDelete),
                         SizedBox(width: AppConstants.actionIconSpacing),
@@ -197,7 +204,7 @@ class _ActionIcon extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
 
-  const _ActionIcon({required this.icon, required this.onTap});
+  const _ActionIcon({super.key, required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {

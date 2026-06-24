@@ -81,8 +81,8 @@ mixin DocActionsMixin<T extends StatefulWidget> on State<T> {
     await Printing.layoutPdf(onLayout: (_) => File(absPath).readAsBytes());
   }
 
-  void shareDoc(Document doc) async {
+  void shareDoc(Document doc, Rect shareRect) async {
     final absPath = await resolveDocPath(doc.filePath);
-    Share.shareXFiles([XFile(absPath)]);
+    Share.shareXFiles([XFile(absPath)], sharePositionOrigin: shareRect);
   }
 }

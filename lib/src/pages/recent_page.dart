@@ -51,7 +51,7 @@ class _RecentPageState extends State<RecentPage> with DocActionsMixin {
               return DocumentCard(
                 document: d,
                 onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ViewerPage(pdfPath: d.filePath, title: d.title))),
-                onShare: () => shareDoc(d),
+                onShare: (rect) => shareDoc(d, rect),
                 onDelete: () => deleteDoc(d),
                 onEdit: () => editDoc(d),
                 onFavourite: () => toggleFavourite(d),
