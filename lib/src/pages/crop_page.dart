@@ -72,12 +72,16 @@ class _CropPageState extends State<CropPage> {
     final bytes = await File(widget.originalPath).readAsBytes();
     final decoded = img.decodeImage(bytes);
     if (decoded == null || !mounted) return;
-    // Re-encode to strip EXIF so Flutter's Image widget won't auto-rotate the
-    // display — keeping display pixels identical to what _computeWarp reads.
-    final stripped = Uint8List.fromList(img.encodeJpg(decoded, quality: 95));
+    // Re-encode to strip EXIF rotation so Flutter's Image widget and
+    // _computeWarp both operate on the same pixel grid (no auto-rotate).
+    final stripped = img.encodeJpg(
+      img.bakeOrientation(decoded),
+      quality: 95,
+    );
+    final baked = img.decodeImage(stripped)!;
     setState(() {
-      _origImage = decoded;
-      _displayBytes = stripped;
+      _origImage = baked;          // orientation-baked, EXIF-free
+      _displayBytes = Uint8List.fromList(stripped);
     });
     _autoDetect();
   }
@@ -228,38 +232,72 @@ class _CropPageState extends State<CropPage> {
 
     final iw = source.width.toDouble(), ih = source.height.toDouble();
 
-    // Source quad in image pixels (TL, TR, BR, BL)
-    final src = [
-      Offset(_tl.dx * iw, _tl.dy * ih),
-      Offset(_tr.dx * iw, _tr.dy * ih),
-      Offset(_br.dx * iw, _br.dy * ih),
-      Offset(_bl.dx * iw, _bl.dy * ih),
-    ];
+    // Source quad corners in image pixels: TL, TR, BR, BL
+    final tl = Offset(_tl.dx * iw, _tl.dy * ih);
+    final tr = Offset(_tr.dx * iw, _tr.dy * ih);
+    final br = Offset(_br.dx * iw, _br.dy * ih);
+    final bl = Offset(_bl.dx * iw, _bl.dy * ih);
 
-    double edgeLen(Offset a, Offset b) => (b - a).distance;
-    final outW = ((edgeLen(src[0], src[1]) + edgeLen(src[3], src[2])) / 2)
-        .round()
-        .clamp(1, 8000);
-    final outH = ((edgeLen(src[0], src[3]) + edgeLen(src[1], src[2])) / 2)
-        .round()
-        .clamp(1, 8000);
+    // ignore: avoid_print
+    print('WARP: src=${source.width}x${source.height} tl=$tl tr=$tr bl=$bl br=$br');
+
+    // Output size: max of opposite edge lengths to preserve document aspect ratio.
+    double len(Offset a, Offset b) => (b - a).distance;
+    final outW = math.max(len(tl, tr), len(bl, br)).round().clamp(1, 8000);
+    final outH = math.max(len(tl, bl), len(tr, br)).round().clamp(1, 8000);
+
+    // Perspective homography: maps output rect corners → source quad corners.
+    //   (0,0)       → tl
+    //   (outW,0)    → tr
+    //   (outW,outH) → br
+    //   (0,outH)    → bl
+    // Solved as 8×8 linear system via Gaussian elimination.
+    final dstPts = [
+      Offset(0, 0), Offset(outW.toDouble(), 0),
+      Offset(outW.toDouble(), outH.toDouble()), Offset(0, outH.toDouble()),
+    ];
+    final srcPts = [tl, tr, br, bl];
+
+    // Build A (8×8) and b (8×1)
+    final A = List.generate(8, (_) => List<double>.filled(8, 0));
+    final bv = List<double>.filled(8, 0);
+    for (int i = 0; i < 4; i++) {
+      final dx = dstPts[i].dx, dy = dstPts[i].dy;
+      final sx = srcPts[i].dx, sy = srcPts[i].dy;
+      A[2*i]   = [dx, dy, 1, 0, 0, 0, -sx*dx, -sx*dy];
+      bv[2*i]  = sx;
+      A[2*i+1] = [0, 0, 0, dx, dy, 1, -sy*dx, -sy*dy];
+      bv[2*i+1]= sy;
+    }
+
+    // Gaussian elimination with partial pivoting
+    final aug = List.generate(8, (i) => [...A[i], bv[i]]);
+    for (int col = 0; col < 8; col++) {
+      int pivot = col;
+      for (int row = col + 1; row < 8; row++) {
+        if (aug[row][col].abs() > aug[pivot][col].abs()) pivot = row;
+      }
+      final tmp = aug[col]; aug[col] = aug[pivot]; aug[pivot] = tmp;
+      final p = aug[col][col];
+      if (p.abs() < 1e-12) continue;
+      for (int j = col; j <= 8; j++) aug[col][j] /= p;
+      for (int row = 0; row < 8; row++) {
+        if (row == col) continue;
+        final f = aug[row][col];
+        for (int j = col; j <= 8; j++) aug[row][j] -= f * aug[col][j];
+      }
+    }
+    final h = List.generate(8, (i) => aug[i][8]);
+    // h = [h0,h1,h2,h3,h4,h5,h6,h7], h8=1
 
     final warped = img.Image(width: outW, height: outH);
 
     for (int dy = 0; dy < outH; dy++) {
-      final v = outH == 1 ? 0.0 : dy / (outH - 1);
       for (int dx = 0; dx < outW; dx++) {
-        final u = outW == 1 ? 0.0 : dx / (outW - 1);
-
-        // Bilinear inverse map: TL*(1-u)(1-v) + TR*u(1-v) + BR*u*v + BL*(1-u)*v
-        final sx = src[0].dx * (1-u) * (1-v)
-                 + src[1].dx *    u  * (1-v)
-                 + src[2].dx *    u  *    v
-                 + src[3].dx * (1-u) *    v;
-        final sy = src[0].dy * (1-u) * (1-v)
-                 + src[1].dy *    u  * (1-v)
-                 + src[2].dy *    u  *    v
-                 + src[3].dy * (1-u) *    v;
+        final ddx = dx.toDouble(), ddy = dy.toDouble();
+        final denom = h[6]*ddx + h[7]*ddy + 1.0;
+        final sx = (h[0]*ddx + h[1]*ddy + h[2]) / denom;
+        final sy = (h[3]*ddx + h[4]*ddy + h[5]) / denom;
 
         final x0 = sx.floor().clamp(0, source.width  - 1);
         final y0 = sy.floor().clamp(0, source.height - 1);
@@ -272,14 +310,14 @@ class _CropPageState extends State<CropPage> {
         final c01 = source.getPixel(x0, y1);
         final c11 = source.getPixel(x1, y1);
 
-        int bl(num a, num b, num c, num d) =>
+        int bl2(num a, num b, num c, num d) =>
             (a*(1-fx)*(1-fy) + b*fx*(1-fy) + c*(1-fx)*fy + d*fx*fy)
             .round().clamp(0, 255);
 
         warped.setPixelRgba(dx, dy,
-          bl(c00.r, c10.r, c01.r, c11.r),
-          bl(c00.g, c10.g, c01.g, c11.g),
-          bl(c00.b, c10.b, c01.b, c11.b),
+          bl2(c00.r, c10.r, c01.r, c11.r),
+          bl2(c00.g, c10.g, c01.g, c11.g),
+          bl2(c00.b, c10.b, c01.b, c11.b),
           255,
         );
       }
@@ -465,7 +503,11 @@ class _CropPageState extends State<CropPage> {
         onPanEnd:   (_) => _activeHandle = -1,
         child: Stack(
           children: [
-            Positioned.fill(child: imageWidget),
+            Positioned(
+              left: imgRect.left, top: imgRect.top,
+              width: imgRect.width, height: imgRect.height,
+              child: FittedBox(fit: BoxFit.fill, child: imageWidget),
+            ),
             Positioned.fill(
               child: CustomPaint(
                 painter: _CropPainter(
