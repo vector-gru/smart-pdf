@@ -320,24 +320,25 @@ class _ScannerPageState extends State<ScannerPage> {
   }
 
   Future<void> _pickFromCamera() async {
-    // Use the camera package directly to guarantee rear camera opens.
-    // ImagePicker ignores preferredCameraDevice on iOS.
-    final cameras = await availableCameras();
-    final rear = cameras.firstWhere(
-      (c) => c.lensDirection == CameraLensDirection.back,
-      orElse: () => cameras.first,
-    );
-    if (!mounted) return;
-    final path = await Navigator.of(context).push<String>(
-      MaterialPageRoute(builder: (_) => CameraCapturePage(camera: rear)),
-    );
-    if (path == null) return;
-    final saved = await _saveToTemp(path);
-    setState(() {
-      _images.add(saved);
-      _currentPage = _images.length - 1;
-    });
-    _pageController.animateToPage(_currentPage, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+    try {
+      final cameras = await availableCameras();
+      if (cameras.isEmpty) return;
+      final rear = cameras.firstWhere(
+        (c) => c.lensDirection == CameraLensDirection.back,
+        orElse: () => cameras.first,
+      );
+      if (!mounted) return;
+      final path = await Navigator.of(context).push<String>(
+        MaterialPageRoute(builder: (_) => CameraCapturePage(camera: rear)),
+      );
+      if (path == null) return;
+      final saved = await _saveToTemp(path);
+      setState(() {
+        _images.add(saved);
+        _currentPage = _images.length - 1;
+      });
+      _pageController.animateToPage(_currentPage, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+    } catch (_) {}
   }
 
   Future<void> _pickFromGallery() async {

@@ -1,4 +1,4 @@
-package com.vectorgru.smart_pdf
+package com.hifivetech.smartpdf
 
 import io.flutter.embedding.android.FlutterActivity
 

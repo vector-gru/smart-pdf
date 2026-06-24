@@ -192,18 +192,21 @@ class _ScanFab extends StatelessWidget {
   }
 
   void _openCamera(BuildContext context) async {
-    final cameras = await availableCameras();
-    final rear = cameras.firstWhere(
-      (c) => c.lensDirection == CameraLensDirection.back,
-      orElse: () => cameras.first,
-    );
-    if (!context.mounted) return;
-    final path = await Navigator.of(context).push<String>(
-      MaterialPageRoute(builder: (_) => CameraCapturePage(camera: rear)),
-    );
-    if (path == null) return;
-    if (!context.mounted) return;
-    _navigate(context, [path]);
+    try {
+      final cameras = await availableCameras();
+      if (cameras.isEmpty) return;
+      final rear = cameras.firstWhere(
+        (c) => c.lensDirection == CameraLensDirection.back,
+        orElse: () => cameras.first,
+      );
+      if (!context.mounted) return;
+      final path = await Navigator.of(context).push<String>(
+        MaterialPageRoute(builder: (_) => CameraCapturePage(camera: rear)),
+      );
+      if (path == null) return;
+      if (!context.mounted) return;
+      _navigate(context, [path]);
+    } catch (_) {}
   }
 
   void _navigate(BuildContext context, List<String> paths) async {
