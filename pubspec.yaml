@@ -44,6 +44,7 @@ dependencies:
   path: ^1.8.0
   intl: ^0.19.0
   uuid: ^4.5.1
+  file_picker: ^11.0.2
   drift: ^2.7.0
   sqlite3_flutter_libs: ^0.5.5
 

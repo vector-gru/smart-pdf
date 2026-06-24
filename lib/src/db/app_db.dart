@@ -4,6 +4,8 @@ import 'package:drift/native.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:pdfx/pdfx.dart' show PdfDocument;
+import 'package:printing/printing.dart';
 import 'package:uuid/uuid.dart';
 import '../services/pdf_service.dart';
 
@@ -93,6 +95,56 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> renameDocument(String id, String newTitle) async {
     await (update(documents)..where((d) => d.id.equals(id))).write(DocumentsCompanion(title: Value(newTitle), updatedAt: Value(DateTime.now())));
+  }
+
+  /// Imports an existing PDF file from [sourcePath] into app storage.
+  /// Copies the file, renders the first page as a thumbnail, and inserts a DB row.
+  Future<String> importPdfFile(String sourcePath) async {
+    final docsDir = await getApplicationDocumentsDirectory();
+    final docUuid = const Uuid().v4();
+    final docFolder = Directory(p.join(docsDir.path, 'smart_pdf', 'files', docUuid));
+    await docFolder.create(recursive: true);
+
+    final ext = p.extension(sourcePath).toLowerCase().isEmpty ? '.pdf' : p.extension(sourcePath).toLowerCase();
+    final destAbsPath = p.join(docFolder.path, 'document$ext');
+    await File(sourcePath).copy(destAbsPath);
+    final relativePdfPath = p.relative(destAbsPath, from: docsDir.path);
+
+    int pagesCount = 0;
+    String? relativeThumbnailPath;
+    try {
+      final doc = await PdfDocument.openFile(destAbsPath);
+      pagesCount = doc.pagesCount;
+      await doc.close();
+      final pdfBytes = await File(destAbsPath).readAsBytes();
+      await for (final raster in Printing.raster(pdfBytes, pages: [0], dpi: 72)) {
+        final pngBytes = await raster.toPng();
+        final thumbsDir = Directory(p.join(docsDir.path, 'smart_pdf', 'thumbs'));
+        await thumbsDir.create(recursive: true);
+        final thumbAbsFile = p.join(thumbsDir.path, '${const Uuid().v4()}.jpg');
+        final compressed = await FlutterImageCompress.compressWithList(
+          pngBytes,
+          minWidth: 200,
+          minHeight: 260,
+          quality: 75,
+          format: CompressFormat.jpeg,
+        );
+        await File(thumbAbsFile).writeAsBytes(compressed);
+        relativeThumbnailPath = p.relative(thumbAbsFile, from: docsDir.path);
+        break;
+      }
+    } catch (_) {}
+
+    final title = p.basenameWithoutExtension(sourcePath);
+    final docId = const Uuid().v4();
+    await into(documents).insert(DocumentsCompanion.insert(
+      id: Value(docId),
+      title: title,
+      filePath: relativePdfPath,
+      pagesCount: Value(pagesCount),
+      thumbnailPath: Value(relativeThumbnailPath),
+    ));
+    return docId;
   }
 
   /// Creates PDF from images, saves file, writes DB rows and copies page images into a document folder.

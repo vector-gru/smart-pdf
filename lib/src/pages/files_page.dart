@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_constants.dart';
 import '../db/app_db.dart';
@@ -32,6 +33,20 @@ class _FilesPageState extends State<FilesPage> with DocActionsMixin {
     super.dispose();
   }
 
+  Future<void> _browseMoreFiles() async {
+    final result = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+      allowMultiple: true,
+    );
+    if (result == null || result.files.isEmpty) return;
+    for (final file in result.files) {
+      if (file.path == null) continue;
+      await widget.db.importPdfFile(file.path!);
+    }
+    await widget.notifier.reload();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -58,7 +73,7 @@ class _FilesPageState extends State<FilesPage> with DocActionsMixin {
       ),
       body: Column(
         children: [
-          _buildMenuRow(Icons.folder_outlined, 'Browse more files', () {}),
+          _buildMenuRow(Icons.folder_outlined, 'Browse more files', _browseMoreFiles),
           const Divider(height: 1),
           _buildMenuRow(Icons.add_to_drive_outlined, 'Sync with Google Drive', () {}),
           const Divider(height: 1),
