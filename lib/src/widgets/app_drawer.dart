@@ -18,14 +18,8 @@ class AppDrawer extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
               child: Row(
                 children: [
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFCC2222),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.picture_as_pdf, color: Colors.white, size: 28),
+                  ClipOval(
+                    child: Image.asset('assets/logo/smartPDF.png', width: 56, height: 56, fit: BoxFit.cover),
                   ),
                   const SizedBox(width: 14),
                   const Text('SmartPDF', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
