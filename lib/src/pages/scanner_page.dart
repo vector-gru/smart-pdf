@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:smart_pdf/l10n/app_localizations.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
@@ -90,8 +91,6 @@ class _ScannerPageState extends State<ScannerPage> {
   void _bumpVersion(String path) =>
       _imageVersions[path] = (_imageVersions[path] ?? 0) + 1;
 
-  // ── Build ────────────────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -114,6 +113,7 @@ class _ScannerPageState extends State<ScannerPage> {
   }
 
   Widget _buildTopBar() {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       child: Row(
@@ -125,9 +125,9 @@ class _ScannerPageState extends State<ScannerPage> {
           ),
           TextButton(
             onPressed: _saveAndReturn,
-            child: const Text(
-              'Save',
-              style: TextStyle(
+            child: Text(
+              l10n.scannerSave,
+              style: const TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
                 color: Colors.blue,
@@ -211,6 +211,7 @@ class _ScannerPageState extends State<ScannerPage> {
   }
 
   Widget _buildPageIndicator() {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.only(top: 8, bottom: 4),
       child: Container(
@@ -223,7 +224,7 @@ class _ScannerPageState extends State<ScannerPage> {
           borderRadius: BorderRadius.circular(AppConstants.scannerIndicatorRadius),
         ),
         child: Text(
-          'Page ${_currentPage + 1} of ${_images.length}',
+          l10n.scannerPageOf(_currentPage + 1, _images.length),
           style: const TextStyle(
             color: Colors.white,
             fontSize: AppConstants.scannerIndicatorFontSize,
@@ -234,9 +235,10 @@ class _ScannerPageState extends State<ScannerPage> {
   }
 
   Widget _buildPageView() {
+    final l10n = AppLocalizations.of(context)!;
     if (_images.isEmpty) {
-      return const Center(
-        child: Text('No pages yet.\nUse Add page to get started.', textAlign: TextAlign.center),
+      return Center(
+        child: Text(l10n.scannerNoPages, textAlign: TextAlign.center),
       );
     }
     return PageView.builder(
@@ -278,13 +280,14 @@ class _ScannerPageState extends State<ScannerPage> {
   }
 
   Widget _buildBottomBar() {
+    final l10n = AppLocalizations.of(context)!;
     final actions = <_ActionItem>[
-      _ActionItem(icon: Icons.document_scanner_outlined, label: 'Add page', onTap: _showAddPageSheet),
-      _ActionItem(icon: Icons.crop, label: 'Crop', onTap: _cropCurrent),
-      _ActionItem(icon: Icons.lens_blur, label: 'Color', onTap: _showColorSheet),
-      _ActionItem(icon: Icons.rotate_right, label: 'Rotate', onTap: _rotateCurrent),
-      _ActionItem(icon: Icons.reorder, label: 'Reorder', onTap: _reorderPages),
-      _ActionItem(icon: Icons.delete_outline, label: 'Delete', onTap: _deleteCurrent),
+      _ActionItem(icon: Icons.document_scanner_outlined, label: l10n.scannerAddPage, onTap: _showAddPageSheet),
+      _ActionItem(icon: Icons.crop, label: l10n.scannerCrop, onTap: _cropCurrent),
+      _ActionItem(icon: Icons.lens_blur, label: l10n.scannerColor, onTap: _showColorSheet),
+      _ActionItem(icon: Icons.rotate_right, label: l10n.scannerRotate, onTap: _rotateCurrent),
+      _ActionItem(icon: Icons.reorder, label: l10n.scannerReorder, onTap: _reorderPages),
+      _ActionItem(icon: Icons.delete_outline, label: l10n.scannerDelete, onTap: _deleteCurrent),
     ];
 
     return Container(
@@ -331,8 +334,6 @@ class _ScannerPageState extends State<ScannerPage> {
     );
   }
 
-  // ── Actions ──────────────────────────────────────────────────────────────
-
   void _saveAndReturn() {
     if (_editingTitle) _commitTitle();
     if (_images.isEmpty) return;
@@ -340,6 +341,7 @@ class _ScannerPageState extends State<ScannerPage> {
   }
 
   void _showAddPageSheet() {
+    final l10n = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
       builder: (ctx) => SafeArea(
@@ -348,12 +350,12 @@ class _ScannerPageState extends State<ScannerPage> {
           children: [
             ListTile(
               leading: const Icon(Icons.camera_alt_outlined),
-              title: const Text('Take another photo'),
+              title: Text(l10n.scannerTakePhoto),
               onTap: () { Navigator.pop(ctx); _pickFromCamera(); },
             ),
             ListTile(
               leading: const Icon(Icons.image_outlined),
-              title: const Text('Select from photos'),
+              title: Text(l10n.scannerSelectPhotos),
               onTap: () { Navigator.pop(ctx); _pickFromGallery(); },
             ),
           ],
@@ -546,16 +548,17 @@ class _ScannerPageState extends State<ScannerPage> {
 
   void _deleteCurrent() async {
     if (_images.isEmpty) return;
+    final l10n = AppLocalizations.of(context)!;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete page?'),
-        content: Text('Are you sure you want to delete page ${_currentPage + 1}?'),
+        title: Text(l10n.scannerDeletePageTitle),
+        content: Text(l10n.scannerDeletePageContent(_currentPage + 1)),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(l10n.docActionCancel)),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: Text(l10n.docActionDelete, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -570,8 +573,6 @@ class _ScannerPageState extends State<ScannerPage> {
     if (_images.isNotEmpty) _pageController.jumpToPage(_currentPage);
   }
 }
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
 
 class _ActionItem {
   final IconData icon;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_pdf/l10n/app_localizations.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_constants.dart';
 import '../db/app_db.dart';
@@ -23,9 +24,10 @@ class _FavouritePageState extends State<FavouritePage> with DocActionsMixin {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Favourites', style: TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(l10n.favouritesTitle, style: const TextStyle(fontWeight: FontWeight.w600)),
       ),
       body: ListenableBuilder(
         listenable: widget.notifier,
@@ -38,9 +40,9 @@ class _FavouritePageState extends State<FavouritePage> with DocActionsMixin {
                 children: [
                   Icon(Icons.star_outline, size: AppConstants.emptyIconSize, color: Colors.grey[400]),
                   const SizedBox(height: 12),
-                  const Text('No favourites yet', style: TextStyle(fontSize: 18)),
+                  Text(l10n.favouritesEmpty, style: const TextStyle(fontSize: 18)),
                   const SizedBox(height: 8),
-                  const Text('Star a document to see it here', style: TextStyle(color: AppColors.textSecondary)),
+                  Text(l10n.favouritesEmptySubtitle, style: const TextStyle(color: AppColors.textSecondary)),
                 ],
               ),
             );

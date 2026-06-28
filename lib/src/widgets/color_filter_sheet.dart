@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:smart_pdf/l10n/app_localizations.dart';
 import '../constants/app_constants.dart';
 
 class ColorFilterSheet extends StatefulWidget {
@@ -95,7 +96,7 @@ class _ColorFilterSheetState extends State<ColorFilterSheet> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Apply to all pages',
+                    AppLocalizations.of(context)!.filterApplyToAll,
                     style: TextStyle(fontSize: AppConstants.filterSheetToggleFontSize),
                   ),
                   Switch(value: _applyToAll, onChanged: (v) => setState(() => _applyToAll = v)),
@@ -105,7 +106,7 @@ class _ColorFilterSheetState extends State<ColorFilterSheet> {
             SizedBox(height: AppConstants.filterSheetApplyGap),
             ElevatedButton(
               onPressed: () => widget.onApply(_selected, _applyToAll),
-              child: const Text('Apply'),
+              child: Text(AppLocalizations.of(context)!.filterApply),
             ),
           ],
         ),

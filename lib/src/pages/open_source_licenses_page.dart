@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_pdf/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../constants/app_colors.dart';
 
@@ -29,12 +30,13 @@ SOFTWARE.''';
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Open Source Licenses')),
+      appBar: AppBar(title: Text(l10n.licensesTitle)),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          const Text('SmartPDF License', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+          Text(l10n.licensesSmartPdf, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(16),
@@ -47,30 +49,30 @@ SOFTWARE.''';
           const SizedBox(height: 24),
           const Divider(),
           const SizedBox(height: 16),
-          const Text('Third-party Packages', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+          Text(l10n.licensesThirdParty, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
-          const Text(
-            'This app uses open-source Flutter packages. Their licenses can be viewed below.',
-            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+          Text(
+            l10n.licensesThirdPartyDesc,
+            style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 12),
           OutlinedButton.icon(
             onPressed: () => showLicensePage(context: context),
             icon: const Icon(Icons.library_books_outlined),
-            label: const Text('View all package licenses'),
+            label: Text(l10n.licensesViewAll),
           ),
           const SizedBox(height: 16),
           InkWell(
             onTap: () => launchUrl(Uri.parse('https://opensource.org/licenses'), mode: LaunchMode.externalApplication),
-            child: const Padding(
-              padding: EdgeInsets.symmetric(vertical: 8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
               child: Row(
                 children: [
-                  Icon(Icons.open_in_new, size: 16, color: AppColors.primaryMuted),
-                  SizedBox(width: 8),
+                  const Icon(Icons.open_in_new, size: 16, color: AppColors.primaryMuted),
+                  const SizedBox(width: 8),
                   Text(
-                    'Learn more about Open Source licenses',
-                    style: TextStyle(color: AppColors.primaryMuted, decoration: TextDecoration.underline),
+                    l10n.licensesLearnMore,
+                    style: const TextStyle(color: AppColors.primaryMuted, decoration: TextDecoration.underline),
                   ),
                 ],
               ),

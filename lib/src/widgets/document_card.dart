@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:smart_pdf/l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_constants.dart';
@@ -146,14 +147,6 @@ class _DocumentCardState extends State<DocumentCard> {
               ),
               onPressed: () {
                 widget.onFavourite();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(document.isFavorite
-                        ? 'Removed from favourites'
-                        : 'Added to favourites'),
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
               },
             ),
             ],
@@ -173,13 +166,12 @@ class _DocumentCardState extends State<DocumentCard> {
           children: [
             ListTile(
               leading: const Icon(Icons.edit),
-              title: const Text('Rename'),
+              title: Text(AppLocalizations.of(ctx)!.docActionRename),
               onTap: () { Navigator.pop(ctx); widget.onRename(); },
             ),
-
             ListTile(
               leading: const Icon(Icons.print),
-              title: const Text('Print'),
+              title: Text(AppLocalizations.of(ctx)!.docActionPrint),
               onTap: () { Navigator.pop(ctx); widget.onPrint(); },
             ),
           ],

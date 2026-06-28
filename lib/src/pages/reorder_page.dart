@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:smart_pdf/l10n/app_localizations.dart';
 import '../constants/app_constants.dart';
 
 /// Returns the reordered list of image paths, or null if cancelled.
@@ -73,10 +74,10 @@ class _ReorderPageState extends State<ReorderPage> {
             icon: Icon(Icons.close, size: AppConstants.reorderAppBarIconSize),
             onPressed: () => Navigator.pop(context, null),
           ),
-          const Expanded(
+          Expanded(
             child: Text(
-              'Reorder',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+              AppLocalizations.of(context)!.reorderPageTitle,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
             ),
           ),
           IconButton(

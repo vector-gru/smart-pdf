@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:smart_pdf/l10n/app_localizations.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_constants.dart';
 import '../db/app_db.dart';
@@ -49,6 +50,7 @@ class _FilesPageState extends State<FilesPage> with DocActionsMixin {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -56,10 +58,10 @@ class _FilesPageState extends State<FilesPage> with DocActionsMixin {
             ? TextField(
                 controller: _searchController,
                 autofocus: true,
-                decoration: const InputDecoration(hintText: 'Search documents…', border: InputBorder.none),
+                decoration: InputDecoration(hintText: l10n.homeSearchHint, border: InputBorder.none),
                 onChanged: (v) => setState(() => _searchQuery = v),
               )
-            : const Text('Files', style: TextStyle(fontWeight: FontWeight.w600)),
+            : Text(l10n.filesTitle, style: const TextStyle(fontWeight: FontWeight.w600)),
         actions: [
           IconButton(icon: const Icon(Icons.emoji_events, color: AppColors.crown), onPressed: () {}),
           IconButton(
@@ -73,9 +75,9 @@ class _FilesPageState extends State<FilesPage> with DocActionsMixin {
       ),
       body: Column(
         children: [
-          _buildMenuRow(Icons.folder_outlined, 'Browse more files', _browseMoreFiles),
+          _buildMenuRow(Icons.folder_outlined, l10n.filesBrowseMore, _browseMoreFiles),
           const Divider(height: 1),
-          _buildMenuRow(Icons.add_to_drive_outlined, 'Sync with Google Drive', () {}),
+          _buildMenuRow(Icons.add_to_drive_outlined, l10n.filesSyncDrive, () {}),
           const Divider(height: 1),
           Expanded(
             child: ListenableBuilder(
@@ -92,10 +94,10 @@ class _FilesPageState extends State<FilesPage> with DocActionsMixin {
                       children: [
                         Icon(Icons.inbox_outlined, size: 80, color: Colors.blue[100]),
                         const SizedBox(height: 16),
-                        const Text('No files yet', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                        Text(l10n.filesEmpty, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                         const SizedBox(height: 8),
-                        const Text('Start adding PDF files to build your digital library!',
-                            textAlign: TextAlign.center, style: TextStyle(color: AppColors.textSecondary)),
+                        Text(l10n.filesEmptySubtitle,
+                            textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textSecondary)),
                       ],
                     ),
                   );

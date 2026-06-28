@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_pdf/l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../constants/app_colors.dart';
@@ -77,17 +78,17 @@ class _FeedbackSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Get in touch',
-              style: TextStyle(
+            Text(
+              AppLocalizations.of(context)!.feedbackTitle,
+              style: const TextStyle(
                 fontSize: AppConstants.feedbackTitleFontSize,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
-              'Send feedback or follow us on social media',
-              style: TextStyle(
+            Text(
+              AppLocalizations.of(context)!.feedbackSubtitle,
+              style: const TextStyle(
                 fontSize: AppConstants.feedbackSubtitleFontSize,
                 color: AppColors.textSecondary,
               ),

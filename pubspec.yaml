@@ -30,6 +30,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   pdf: ^3.10.1
   pdfx: ^2.9.2
   printing: ^5.11.0
@@ -42,7 +44,7 @@ dependencies:
   flutter_image_compress: ^2.3.0
   share_plus: ^10.1.4
   path: ^1.8.0
-  intl: ^0.19.0
+  intl: ^0.20.2
   uuid: ^4.5.1
   file_picker: ^11.0.2
   url_launcher: ^6.3.0
@@ -83,10 +85,8 @@ flutter_launcher_icons:
 
 # The following section is specific to Flutter packages.
 flutter:
+  generate: true
 
-  # The following line ensures that the Material Icons font is
-  # included with your application, so that you can use the icons in
-  # the material Icons class.
   uses-material-design: true
 
   assets:

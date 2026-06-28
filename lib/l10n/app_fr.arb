@@ -1,0 +1,100 @@
+{
+  "@@locale": "fr",
+
+  "appTitle": "SmartPDF",
+  "navHome": "Accueil",
+  "navFiles": "Fichiers",
+  "navRecent": "Récents",
+  "navFavourite": "Favoris",
+
+  "homeSearchHint": "Rechercher des documents…",
+  "homeEmpty": "Aucun document",
+  "homeEmptySubtitle": "Appuyez sur le bouton ci-dessous pour scanner ou importer",
+
+  "filesTitle": "Fichiers",
+  "filesBrowseMore": "Parcourir plus de fichiers",
+  "filesSyncDrive": "Synchroniser avec Google Drive",
+  "filesEmpty": "Aucun fichier",
+  "filesEmptySubtitle": "Commencez à ajouter des PDF pour constituer votre bibliothèque !",
+
+  "recentTitle": "Récents",
+  "recentEmpty": "Aucun document récent",
+
+  "favouritesTitle": "Favoris",
+  "favouritesEmpty": "Aucun favori",
+  "favouritesEmptySubtitle": "Marquez un document d'une étoile pour le retrouver ici",
+
+  "viewerTitle": "Visionneuse",
+
+  "drawerSettings": "Paramètres",
+  "drawerTheme": "Thème",
+  "drawerRateApp": "Noter l'application",
+  "drawerLanguage": "Langue",
+  "drawerShareApp": "Partager l'application",
+  "drawerFeedback": "Feedback & Réseaux sociaux",
+  "drawerPrivacy": "Politique de confidentialité",
+  "drawerLicenses": "Licences open source",
+
+  "languageSheetTitle": "Choisir la langue",
+  "languageEnglish": "Anglais",
+  "languageFrench": "Français",
+
+  "docActionDelete": "Supprimer",
+  "docActionRemove": "Retirer",
+  "docActionCancel": "Annuler",
+  "docActionRename": "Renommer",
+  "docActionSave": "Enregistrer",
+  "docActionPrint": "Imprimer",
+  "docActionShare": "Partager",
+  "docActionEdit": "Modifier",
+  "docDeleteTitle": "Supprimer le document ?",
+  "docRemoveTitle": "Retirer le document ?",
+  "docDeleteContent": "Êtes-vous sûr de vouloir supprimer « {title} » ?",
+  "docRemoveContent": "Cela retirera « {title} » de SmartPDF. Le fichier original sur votre appareil ne sera pas affecté.",
+  "docRenameTitle": "Renommer le document",
+  "docRenameLabel": "Nom",
+  "docFavAdded": "Ajouté aux favoris",
+  "docFavRemoved": "Retiré des favoris",
+
+  "scannerSave": "Enregistrer",
+  "scannerAddPage": "Ajouter page",
+  "scannerCrop": "Rogner",
+  "scannerColor": "Couleur",
+  "scannerRotate": "Pivoter",
+  "scannerReorder": "Réorganiser",
+  "scannerDelete": "Supprimer",
+  "scannerNoPages": "Aucune page.\nUtilisez Ajouter page pour commencer.",
+  "scannerPageOf": "Page {current} sur {total}",
+  "scannerTakePhoto": "Prendre une autre photo",
+  "scannerSelectPhotos": "Sélectionner depuis les photos",
+  "scannerDeletePageTitle": "Supprimer la page ?",
+  "scannerDeletePageContent": "Êtes-vous sûr de vouloir supprimer la page {page} ?",
+
+  "cropAdjustBorders": "Ajuster les bords",
+  "cropAuto": "Auto",
+  "cropReset": "Réinitialiser",
+  "cropRotate": "Pivoter",
+  "cropPreview": "Aperçu",
+  "cropEdit": "Modifier",
+  "cropDone": "Terminer",
+  "cropPreviewLabel": "Voici ce qui sera enregistré",
+  "cropPreviewBadge": "APERÇU",
+
+  "reorderPageTitle": "Réorganiser",
+
+  "filterApplyToAll": "Appliquer à toutes les pages",
+  "filterApply": "Appliquer",
+
+  "feedbackTitle": "Nous contacter",
+  "feedbackSubtitle": "Envoyez un retour ou suivez-nous sur les réseaux sociaux",
+
+  "privacyPolicyTitle": "Politique de confidentialité",
+  "licensesTitle": "Licences open source",
+  "licensesSmartPdf": "Licence SmartPDF",
+  "licensesThirdParty": "Paquets tiers",
+  "licensesThirdPartyDesc": "Cette application utilise des paquets Flutter open source. Leurs licences peuvent être consultées ci-dessous.",
+  "licensesViewAll": "Voir toutes les licences",
+  "licensesLearnMore": "En savoir plus sur les licences open source",
+
+  "couldNotOpenPdf": "Impossible d'ouvrir le PDF :\n{error}"
+}

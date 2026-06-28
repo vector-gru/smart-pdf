@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../constants/app_colors.dart';
+import 'package:smart_pdf/l10n/app_localizations.dart';
 import '../constants/app_constants.dart';
 import '../db/app_db.dart';
 import '../db/docs_notifier.dart';
@@ -23,9 +23,10 @@ class _RecentPageState extends State<RecentPage> with DocActionsMixin {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Recent', style: TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(l10n.recentTitle, style: const TextStyle(fontWeight: FontWeight.w600)),
       ),
       body: ListenableBuilder(
         listenable: widget.notifier,
@@ -38,7 +39,7 @@ class _RecentPageState extends State<RecentPage> with DocActionsMixin {
                 children: [
                   Icon(Icons.access_time, size: AppConstants.emptyIconSize, color: Colors.grey[400]),
                   const SizedBox(height: 12),
-                  const Text('No recent documents', style: TextStyle(fontSize: 18)),
+                  Text(l10n.recentEmpty, style: const TextStyle(fontSize: 18)),
                 ],
               ),
             );

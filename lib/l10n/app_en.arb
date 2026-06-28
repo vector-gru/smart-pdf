@@ -1,0 +1,126 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "SmartPDF",
+  "navHome": "Home",
+  "navFiles": "Files",
+  "navRecent": "Recent",
+  "navFavourite": "Favourite",
+
+  "homeSearchHint": "Search documents…",
+  "homeEmpty": "No documents yet",
+  "homeEmptySubtitle": "Tap the button below to scan or import",
+
+  "filesTitle": "Files",
+  "filesBrowseMore": "Browse more files",
+  "filesSyncDrive": "Sync with Google Drive",
+  "filesEmpty": "No files yet",
+  "filesEmptySubtitle": "Start adding PDF files to build your digital library!",
+
+  "recentTitle": "Recent",
+  "recentEmpty": "No recent documents",
+
+  "favouritesTitle": "Favourites",
+  "favouritesEmpty": "No favourites yet",
+  "favouritesEmptySubtitle": "Star a document to see it here",
+
+  "viewerTitle": "Viewer",
+
+  "drawerSettings": "Settings",
+  "drawerTheme": "Theme",
+  "drawerRateApp": "Rate app",
+  "drawerLanguage": "Language",
+  "drawerShareApp": "Share this app",
+  "drawerFeedback": "Feedback & Social",
+  "drawerPrivacy": "Privacy policy",
+  "drawerLicenses": "Open Source Licenses",
+
+  "languageSheetTitle": "Select language",
+  "languageEnglish": "English",
+  "languageFrench": "French",
+
+  "docActionDelete": "Delete",
+  "docActionRemove": "Remove",
+  "docActionCancel": "Cancel",
+  "docActionRename": "Rename",
+  "docActionSave": "Save",
+  "docActionPrint": "Print",
+  "docActionShare": "Share",
+  "docActionEdit": "Edit",
+  "docDeleteTitle": "Delete document?",
+  "docRemoveTitle": "Remove document?",
+  "docDeleteContent": "Are you sure you want to delete \"{title}\"?",
+  "@docDeleteContent": {
+    "placeholders": {
+      "title": { "type": "String" }
+    }
+  },
+  "docRemoveContent": "This will remove \"{title}\" from SmartPDF. The original file on your device will not be affected.",
+  "@docRemoveContent": {
+    "placeholders": {
+      "title": { "type": "String" }
+    }
+  },
+  "docRenameTitle": "Rename document",
+  "docRenameLabel": "Name",
+  "docFavAdded": "Added to favourites",
+  "docFavRemoved": "Removed from favourites",
+
+  "scannerSave": "Save",
+  "scannerAddPage": "Add page",
+  "scannerCrop": "Crop",
+  "scannerColor": "Color",
+  "scannerRotate": "Rotate",
+  "scannerReorder": "Reorder",
+  "scannerDelete": "Delete",
+  "scannerNoPages": "No pages yet.\nUse Add page to get started.",
+  "scannerPageOf": "Page {current} of {total}",
+  "@scannerPageOf": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "scannerTakePhoto": "Take another photo",
+  "scannerSelectPhotos": "Select from photos",
+  "scannerDeletePageTitle": "Delete page?",
+  "scannerDeletePageContent": "Are you sure you want to delete page {page}?",
+  "@scannerDeletePageContent": {
+    "placeholders": {
+      "page": { "type": "int" }
+    }
+  },
+
+  "cropAdjustBorders": "Adjust borders",
+  "cropAuto": "Auto",
+  "cropReset": "Reset",
+  "cropRotate": "Rotate",
+  "cropPreview": "Preview",
+  "cropEdit": "Edit",
+  "cropDone": "Done",
+  "cropPreviewLabel": "This is what will be saved",
+  "cropPreviewBadge": "PREVIEW",
+
+  "reorderPageTitle": "Reorder",
+
+  "filterApplyToAll": "Apply to all pages",
+  "filterApply": "Apply",
+
+  "feedbackTitle": "Get in touch",
+  "feedbackSubtitle": "Send feedback or follow us on social media",
+
+  "privacyPolicyTitle": "Privacy Policy",
+  "licensesTitle": "Open Source Licenses",
+  "licensesSmartPdf": "SmartPDF License",
+  "licensesThirdParty": "Third-party Packages",
+  "licensesThirdPartyDesc": "This app uses open-source Flutter packages. Their licenses can be viewed below.",
+  "licensesViewAll": "View all package licenses",
+  "licensesLearnMore": "Learn more about Open Source licenses",
+
+  "couldNotOpenPdf": "Could not open PDF:\n{error}",
+  "@couldNotOpenPdf": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  }
+}

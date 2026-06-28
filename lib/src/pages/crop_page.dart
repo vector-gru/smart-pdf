@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:smart_pdf/l10n/app_localizations.dart';
 import 'package:image/image.dart' as img;
 import '../constants/app_constants.dart';
 
@@ -426,8 +427,8 @@ class _CropPageState extends State<CropPage> {
             onPressed: () => Navigator.pop(context, false),
           ),
           const SizedBox(width: AppConstants.cropAppBarPaddingH),
-          const Text('Adjust borders',
-              style: TextStyle(fontSize: AppConstants.cropAppBarTitleFontSize, fontWeight: FontWeight.w600, color: Colors.white)),
+          Text(AppLocalizations.of(context)!.cropAdjustBorders,
+              style: const TextStyle(fontSize: AppConstants.cropAppBarTitleFontSize, fontWeight: FontWeight.w600, color: Colors.white)),
           const Spacer(),
           if (_previewing)
             Container(
@@ -440,7 +441,7 @@ class _CropPageState extends State<CropPage> {
                 color: Colors.blue,
                 borderRadius: BorderRadius.circular(AppConstants.cropPreviewBadgeRadius),
               ),
-              child: const Text('PREVIEW', style: TextStyle(color: Colors.white, fontSize: AppConstants.cropPreviewBadgeFontSize, fontWeight: FontWeight.w700)),
+              child: Text(AppLocalizations.of(context)!.cropPreviewBadge, style: const TextStyle(color: Colors.white, fontSize: AppConstants.cropPreviewBadgeFontSize, fontWeight: FontWeight.w700)),
             ),
         ],
       ),
@@ -470,8 +471,8 @@ class _CropPageState extends State<CropPage> {
                   color: Colors.black54,
                   borderRadius: BorderRadius.circular(AppConstants.cropPreviewLabelRadius),
                 ),
-                child: const Text('This is what will be saved',
-                    style: TextStyle(color: Colors.white, fontSize: AppConstants.cropPreviewLabelFontSize)),
+                child: Text(AppLocalizations.of(context)!.cropPreviewLabel,
+                    style: const TextStyle(color: Colors.white, fontSize: AppConstants.cropPreviewLabelFontSize)),
               ),
             ),
           ),
@@ -574,7 +575,7 @@ class _CropPageState extends State<CropPage> {
           borderRadius: BorderRadius.circular(AppConstants.cropIndicatorRadius),
         ),
         child: Text(
-          'Page ${widget.currentPage + 1} of ${widget.totalPages}',
+          AppLocalizations.of(context)!.scannerPageOf(widget.currentPage + 1, widget.totalPages),
           style: const TextStyle(color: Colors.white, fontSize: AppConstants.cropIndicatorFontSize),
         ),
       ),
@@ -588,16 +589,16 @@ class _CropPageState extends State<CropPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _btn(Icons.document_scanner_outlined, 'Auto', _autoDetect),
-          _btn(Icons.crop_free, 'Reset', _resetHandles),
-          _btn(Icons.rotate_right, 'Rotate', _rotate),
+          _btn(Icons.document_scanner_outlined, AppLocalizations.of(context)!.cropAuto, _autoDetect),
+          _btn(Icons.crop_free, AppLocalizations.of(context)!.cropReset, _resetHandles),
+          _btn(Icons.rotate_right, AppLocalizations.of(context)!.cropRotate, _rotate),
           _btn(
             _previewing ? Icons.edit : Icons.preview,
-            _previewing ? 'Edit' : 'Preview',
+            _previewing ? AppLocalizations.of(context)!.cropEdit : AppLocalizations.of(context)!.cropPreview,
             _togglePreview,
             color: Colors.orange,
           ),
-          _btn(Icons.check, 'Done', _done, color: Colors.blue),
+          _btn(Icons.check, AppLocalizations.of(context)!.cropDone, _done, color: Colors.blue),
         ],
       ),
     );

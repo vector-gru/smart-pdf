@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:smart_pdf/l10n/app_localizations.dart';
 import 'package:pdfx/pdfx.dart';
 import 'package:share_plus/share_plus.dart';
 import '../constants/app_constants.dart';
 import '../db/app_db.dart';
 
 class ViewerPage extends StatefulWidget {
-  final String pdfPath; // may be relative or absolute
+  final String pdfPath;
   final String? title;
   const ViewerPage({Key? key, required this.pdfPath, this.title}) : super(key: key);
 
@@ -57,12 +58,13 @@ class _ViewerPageState extends State<ViewerPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Viewer'),
+            Text(l10n.viewerTitle),
             if (widget.title != null)
               Text(widget.title!, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400)),
           ],
@@ -72,7 +74,7 @@ class _ViewerPageState extends State<ViewerPage> {
         ],
       ),
       body: _error != null
-          ? Center(child: Text('Could not open PDF:\n$_error', textAlign: TextAlign.center))
+          ? Center(child: Text(l10n.couldNotOpenPdf(_error!), textAlign: TextAlign.center))
           : _pdfController == null
               ? const Center(child: CircularProgressIndicator())
               : PdfViewPinch(

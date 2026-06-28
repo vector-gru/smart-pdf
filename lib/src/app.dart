@@ -1,11 +1,13 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:smart_pdf/l10n/app_localizations.dart';
 import 'widgets/app_drawer.dart';
 import 'widgets/camera_capture_page.dart';
 import 'constants/app_colors.dart';
 import 'constants/app_constants.dart';
 import 'db/app_db.dart';
 import 'db/docs_notifier.dart';
+import 'l10n/locale_provider.dart';
 import 'pages/home_page.dart';
 import 'pages/files_page.dart';
 import 'pages/recent_page.dart';
@@ -16,7 +18,8 @@ import 'package:image_picker/image_picker.dart';
 
 class AppShell extends StatefulWidget {
   final AppDatabase db;
-  const AppShell({super.key, required this.db});
+  final LocaleProvider localeProvider;
+  const AppShell({super.key, required this.db, required this.localeProvider});
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -52,7 +55,7 @@ class _AppShellState extends State<AppShell> {
     return Scaffold(
       key: _scaffoldKey,
       extendBody: true,
-      drawer: const AppDrawer(),
+      drawer: AppDrawer(localeProvider: widget.localeProvider),
       body: Builder(
         builder: (context) {
           final bottomInset = MediaQuery.of(context).padding.bottom;
@@ -82,15 +85,17 @@ class _FloatingNavBar extends StatelessWidget {
 
   const _FloatingNavBar({required this.currentIndex, required this.onTap});
 
-  static const _items = [
-    (Icons.home_outlined, Icons.home, 'Home'),
-    (Icons.description_outlined, Icons.description, 'Files'),
-    (Icons.access_time_outlined, Icons.access_time_filled, 'Recent'),
-    (Icons.star_outline, Icons.star, 'Favourite'),
+  static const _icons = [
+    (Icons.home_outlined, Icons.home),
+    (Icons.description_outlined, Icons.description),
+    (Icons.access_time_outlined, Icons.access_time_filled),
+    (Icons.star_outline, Icons.star),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final labels = [l10n.navHome, l10n.navFiles, l10n.navRecent, l10n.navFavourite];
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
@@ -109,9 +114,9 @@ class _FloatingNavBar extends StatelessWidget {
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: List.generate(_items.length, (i) {
+            children: List.generate(_icons.length, (i) {
               final selected = i == currentIndex;
-              final item = _items[i];
+              final item = _icons[i];
               return Expanded(
                 child: InkWell(
                   onTap: () => onTap(i),
@@ -126,7 +131,7 @@ class _FloatingNavBar extends StatelessWidget {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        item.$3,
+                        labels[i],
                         style: TextStyle(
                           fontSize: 10,
                           color: selected ? AppColors.primaryMuted : AppColors.navUnselected,

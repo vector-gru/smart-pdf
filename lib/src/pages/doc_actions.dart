@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:smart_pdf/l10n/app_localizations.dart';
 import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 import '../db/app_db.dart';
@@ -12,27 +13,30 @@ mixin DocActionsMixin<T extends StatefulWidget> on State<T> {
   DocsNotifier get notifier;
 
   Future<void> deleteDoc(Document doc) async {
+    final l10n = AppLocalizations.of(context)!;
     final isImported = doc.isImported;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(isImported ? 'Remove document?' : 'Delete document?'),
+        title: Text(isImported ? l10n.docRemoveTitle : l10n.docDeleteTitle),
         content: Text(
           isImported
-              ? 'This will remove "${doc.title}" from SmartPDF. The original file on your device will not be affected.'
-              : 'Are you sure you want to delete "${doc.title}"?',
+              ? l10n.docRemoveContent(doc.title)
+              : l10n.docDeleteContent(doc.title),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(l10n.docActionCancel)),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(isImported ? 'Remove' : 'Delete', style: const TextStyle(color: Colors.red)),
+            child: Text(
+              isImported ? l10n.docActionRemove : l10n.docActionDelete,
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
     );
     if (confirm != true) return;
-    // Only delete the physical file for scanned docs; imported docs leave the original untouched
     if (!isImported) {
       try { final f = File(await resolveDocPath(doc.filePath)); if (await f.exists()) await f.delete(); } catch (_) {}
     }
@@ -57,27 +61,35 @@ mixin DocActionsMixin<T extends StatefulWidget> on State<T> {
       final updated = await db.getDocumentById(created);
       if (updated != null && mounted) {
         Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => ViewerPage(pdfPath: updated.filePath, title: updated.title), // relative path, resolved in ViewerPage
+          builder: (_) => ViewerPage(pdfPath: updated.filePath, title: updated.title),
         ));
       }
     }
   }
 
   Future<void> toggleFavourite(Document doc) async {
+    final l10n = AppLocalizations.of(context)!;
     await db.toggleFavourite(doc.id, !doc.isFavorite);
     await notifier.reload();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(doc.isFavorite ? l10n.docFavRemoved : l10n.docFavAdded),
+        duration: const Duration(seconds: 2),
+      ));
+    }
   }
 
   Future<void> renameDoc(Document doc) async {
+    final l10n = AppLocalizations.of(context)!;
     final ctr = TextEditingController(text: doc.title);
     final newTitle = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Rename document'),
-        content: TextField(controller: ctr, decoration: const InputDecoration(labelText: 'Name')),
+        title: Text(l10n.docRenameTitle),
+        content: TextField(controller: ctr, decoration: InputDecoration(labelText: l10n.docRenameLabel)),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
-          ElevatedButton(onPressed: () => Navigator.of(ctx).pop(ctr.text), child: const Text('Save')),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: Text(l10n.docActionCancel)),
+          ElevatedButton(onPressed: () => Navigator.of(ctx).pop(ctr.text), child: Text(l10n.docActionSave)),
         ],
       ),
     );

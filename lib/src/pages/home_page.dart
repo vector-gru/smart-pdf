@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_pdf/l10n/app_localizations.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_constants.dart';
 import '../db/app_db.dart';
@@ -35,17 +36,18 @@ class _HomePageState extends State<HomePage> with DocActionsMixin {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: widget.onMenuTap,
-          ),
+          icon: const Icon(Icons.menu),
+          onPressed: widget.onMenuTap,
+        ),
         title: _searchActive
             ? TextField(
                 controller: _searchController,
                 autofocus: true,
-                decoration: const InputDecoration(hintText: 'Search documents…', border: InputBorder.none),
+                decoration: InputDecoration(hintText: l10n.homeSearchHint, border: InputBorder.none),
                 onChanged: (v) => setState(() => _searchQuery = v),
               )
             : const Text('SmartPDF', style: TextStyle(fontWeight: FontWeight.w600)),
@@ -74,9 +76,9 @@ class _HomePageState extends State<HomePage> with DocActionsMixin {
                 children: [
                   Icon(Icons.picture_as_pdf, size: AppConstants.emptyIconSize, color: Colors.grey[400]),
                   const SizedBox(height: 12),
-                  const Text('No documents yet', style: TextStyle(fontSize: 18)),
+                  Text(l10n.homeEmpty, style: const TextStyle(fontSize: 18)),
                   const SizedBox(height: 8),
-                  const Text('Tap the button below to scan or import', style: TextStyle(color: AppColors.textSecondary)),
+                  Text(l10n.homeEmptySubtitle, style: const TextStyle(color: AppColors.textSecondary)),
                 ],
               ),
             );
@@ -105,5 +107,4 @@ class _HomePageState extends State<HomePage> with DocActionsMixin {
       ),
     );
   }
-
 }
