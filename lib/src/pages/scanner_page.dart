@@ -42,6 +42,15 @@ class _ScannerPageState extends State<ScannerPage> {
   void initState() {
     super.initState();
     _images.addAll(widget.initialImages);
+    // Eagerly back up any pre-existing images so Default always restores the true original
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      for (final path in List.of(_images)) {
+        if (!_originals.containsKey(path)) {
+          final origPath = await _saveToTemp(path, prefix: '_orig_');
+          _originals[path] = origPath;
+        }
+      }
+    });
     _pageController = PageController(viewportFraction: 0.85);
     if (widget.initialTitle != null && widget.initialTitle!.isNotEmpty) {
       _title = widget.initialTitle!;
@@ -333,6 +342,8 @@ class _ScannerPageState extends State<ScannerPage> {
       );
       if (path == null) return;
       final saved = await _saveToTemp(path);
+      final origPath = await _saveToTemp(path, prefix: '_orig_');
+      _originals[saved] = origPath;
       setState(() {
         _images.add(saved);
         _currentPage = _images.length - 1;
@@ -346,6 +357,8 @@ class _ScannerPageState extends State<ScannerPage> {
     if (list.isEmpty) return;
     for (final x in list) {
       final saved = await _saveToTemp(x.path);
+      final origPath = await _saveToTemp(x.path, prefix: '_orig_');
+      _originals[saved] = origPath;
       _images.add(saved);
     }
     setState(() => _currentPage = _images.length - 1);
@@ -404,10 +417,13 @@ class _ScannerPageState extends State<ScannerPage> {
 
   void _showColorSheet() {
     if (_images.isEmpty) return;
+    final path = _images[_currentPage];
+    final origPath = _originals[path] ?? path;
     showModalBottomSheet(
       context: context,
       builder: (ctx) => _ColorFilterSheet(
-        imagePath: _images[_currentPage],
+        imagePath: path,
+        originalPath: origPath,
         onApply: (filterName, applyToAll) {
           Navigator.pop(ctx);
           _applyColorFilter(filterName, applyToAll);
@@ -423,29 +439,58 @@ class _ScannerPageState extends State<ScannerPage> {
 
     for (final idx in indices) {
       final path = _images[idx];
+
+      // Original should already exist; create only as a safety fallback
+      if (!_originals.containsKey(path)) {
+        final origPath = await _saveToTemp(path, prefix: '_orig_');
+        _originals[path] = origPath;
+      }
+
       final file = File(path);
-      final bytes = await file.readAsBytes();
+
+      if (filterName == 'default') {
+        // Restore original
+        await File(_originals[path]!).copy(path);
+        await FileImage(file).evict();
+        _bumpVersion(path);
+        continue;
+      }
+
+      // Always decode from the original so filters never accumulate
+      final bytes = await File(_originals[path]!).readAsBytes();
       final decoded = img.decodeImage(bytes);
       if (decoded == null) continue;
 
       img.Image processed;
       switch (filterName) {
         case 'bw1':
-          processed = img.grayscale(decoded);
+          // High-contrast black & white
+          final gray = img.grayscale(decoded);
+          processed = img.adjustColor(gray, contrast: 2.5);
           break;
         case 'bw2':
-          final gray = img.grayscale(decoded);
-          processed = img.adjustColor(gray, contrast: 1.4);
+          // Threshold binarization — pure black & white
+          final gray2 = img.grayscale(decoded);
+          processed = img.Image(width: gray2.width, height: gray2.height);
+          for (int y = 0; y < gray2.height; y++) {
+            for (int x = 0; x < gray2.width; x++) {
+              final lum = img.getLuminance(gray2.getPixel(x, y));
+              final v = lum > 140 ? 255 : 0;
+              processed.setPixelRgb(x, y, v, v, v);
+            }
+          }
           break;
         case 'gray':
+          // Neutral grayscale — no brightness boost
           processed = img.grayscale(decoded);
-          processed = img.adjustColor(processed, brightness: 1.1);
           break;
         case 'magic1':
-          processed = img.adjustColor(decoded, contrast: 1.3, brightness: 1.05);
+          // Strong contrast + brightness boost (~3× original effect)
+          processed = img.adjustColor(decoded, contrast: 1.9, brightness: 1.15);
           break;
         case 'magic2':
-          processed = img.adjustColor(decoded, contrast: 1.2, saturation: 0.8);
+          // Very strong contrast + heavy desaturation (~6× original effect)
+          processed = img.adjustColor(decoded, contrast: 2.4, saturation: 0.3, brightness: 1.1);
           break;
         default:
           processed = decoded;
@@ -453,7 +498,6 @@ class _ScannerPageState extends State<ScannerPage> {
 
       final output = img.encodeJpg(processed, quality: 90);
       await file.writeAsBytes(output);
-      // Evict cached image so Flutter reloads from disk
       await FileImage(file).evict();
       _bumpVersion(path);
     }
@@ -546,18 +590,20 @@ class _DashedLinePainter extends CustomPainter {
 
 class _ColorFilterSheet extends StatefulWidget {
   final String imagePath;
+  final String originalPath;
   final void Function(String filterName, bool applyToAll) onApply;
-  const _ColorFilterSheet({required this.imagePath, required this.onApply});
+  const _ColorFilterSheet({required this.imagePath, required this.originalPath, required this.onApply});
 
   @override
   State<_ColorFilterSheet> createState() => _ColorFilterSheetState();
 }
 
 class _ColorFilterSheetState extends State<_ColorFilterSheet> {
-  String _selected = 'magic1';
+  String _selected = 'default';
   bool _applyToAll = false;
 
   static const _filters = [
+    ('default', 'Default'),
     ('magic1', 'Magic 1'),
     ('magic2', 'Magic 2'),
     ('bw1', 'B&W 1'),
@@ -599,11 +645,12 @@ class _ColorFilterSheetState extends State<_ColorFilterSheet> {
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(3),
-                            child: Image.file(
-                              File(widget.imagePath),
-                              fit: BoxFit.cover,
-                              color: _colorOverlayFor(id),
-                              colorBlendMode: _blendModeFor(id),
+                            child: ColorFiltered(
+                              colorFilter: _colorFilterFor(id) ?? const ColorFilter.mode(Colors.transparent, BlendMode.dst),
+                              child: Image.file(
+                                File(widget.originalPath),
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
                         ),
@@ -644,23 +691,47 @@ class _ColorFilterSheetState extends State<_ColorFilterSheet> {
     );
   }
 
-  Color? _colorOverlayFor(String id) {
+  ColorFilter? _colorFilterFor(String id) {
     switch (id) {
+      case 'magic1':
+        // contrast ~1.9, brightness ~1.15 preview
+        return const ColorFilter.matrix([
+           1.9,  0,    0,    0, -50,
+           0,    1.9,  0,    0, -50,
+           0,    0,    1.9,  0, -50,
+           0,    0,    0,    1,   0,
+        ]);
+      case 'magic2':
+        // high contrast + desaturated preview
+        return const ColorFilter.matrix([
+           0.77, 0.63, 0.24, 0, -40,
+           0.07, 1.53, 0.06, 0, -40,
+           0.02, 0.18, 1.44, 0, -40,
+           0,    0,    0,    1,   0,
+        ]);
       case 'bw1':
+        // High contrast greyscale preview
+        return const ColorFilter.matrix([
+          0.299, 0.587, 0.114, 0, 60,
+          0.299, 0.587, 0.114, 0, 60,
+          0.299, 0.587, 0.114, 0, 60,
+          0,     0,     0,     1, 0,
+        ]);
       case 'bw2':
+        // Near-threshold b&w preview
+        return const ColorFilter.matrix([
+          1.5, 1.5, 1.5, 0, -200,
+          1.5, 1.5, 1.5, 0, -200,
+          1.5, 1.5, 1.5, 0, -200,
+          0,   0,   0,   1,    0,
+        ]);
       case 'gray':
-        return Colors.grey;
-      default:
-        return null;
-    }
-  }
-
-  BlendMode? _blendModeFor(String id) {
-    switch (id) {
-      case 'bw1':
-      case 'bw2':
-      case 'gray':
-        return BlendMode.saturation;
+        return const ColorFilter.matrix([
+          0.299, 0.587, 0.114, 0, 0,
+          0.299, 0.587, 0.114, 0, 0,
+          0.299, 0.587, 0.114, 0, 0,
+          0,     0,     0,     1, 0,
+        ]);
       default:
         return null;
     }
