@@ -39,6 +39,11 @@
   "languageEnglish": "English",
   "languageFrench": "French",
 
+  "themeSheetTitle": "Select theme",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "themeDevice": "Device theme",
+
   "docActionDelete": "Delete",
   "docActionRemove": "Remove",
   "docActionCancel": "Cancel",

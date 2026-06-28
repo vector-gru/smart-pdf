@@ -39,6 +39,11 @@
   "languageEnglish": "Anglais",
   "languageFrench": "Français",
 
+  "themeSheetTitle": "Choisir le thème",
+  "themeLight": "Clair",
+  "themeDark": "Sombre",
+  "themeDevice": "Thème de l'appareil",
+
   "docActionDelete": "Supprimer",
   "docActionRemove": "Retirer",
   "docActionCancel": "Annuler",

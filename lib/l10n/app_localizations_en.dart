@@ -100,6 +100,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageFrench => 'French';
 
   @override
+  String get themeSheetTitle => 'Select theme';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get themeDark => 'Dark';
+
+  @override
+  String get themeDevice => 'Device theme';
+
+  @override
   String get docActionDelete => 'Delete';
 
   @override

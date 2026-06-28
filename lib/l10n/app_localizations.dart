@@ -278,6 +278,30 @@ abstract class AppLocalizations {
   /// **'French'**
   String get languageFrench;
 
+  /// No description provided for @themeSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select theme'**
+  String get themeSheetTitle;
+
+  /// No description provided for @themeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get themeLight;
+
+  /// No description provided for @themeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get themeDark;
+
+  /// No description provided for @themeDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Device theme'**
+  String get themeDevice;
+
   /// No description provided for @docActionDelete.
   ///
   /// In en, this message translates to:

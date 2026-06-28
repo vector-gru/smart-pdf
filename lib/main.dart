@@ -4,6 +4,7 @@ import 'package:smart_pdf/l10n/app_localizations.dart';
 import 'src/constants/app_colors.dart';
 import 'src/db/app_db.dart';
 import 'src/l10n/locale_provider.dart';
+import 'src/theme/theme_provider.dart';
 import 'src/app.dart';
 
 void main() async {
@@ -22,6 +23,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   late final LocaleProvider _localeProvider;
+  final ThemeProvider _themeProvider = ThemeProvider();
 
   @override
   void initState() {
@@ -29,11 +31,13 @@ class _MyAppState extends State<MyApp> {
     final deviceLocale = WidgetsBinding.instance.platformDispatcher.locale;
     _localeProvider = LocaleProvider(deviceLocale);
     _localeProvider.addListener(() => setState(() {}));
+    _themeProvider.addListener(() => setState(() {}));
   }
 
   @override
   void dispose() {
     _localeProvider.dispose();
+    _themeProvider.dispose();
     super.dispose();
   }
 
@@ -49,8 +53,10 @@ class _MyAppState extends State<MyApp> {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: LocaleProvider.supportedLocales,
+      themeMode: _themeProvider.themeMode,
       theme: ThemeData(
         colorSchemeSeed: AppColors.primary,
+        brightness: Brightness.light,
         appBarTheme: const AppBarTheme(
           backgroundColor: AppColors.appBarBackground,
           foregroundColor: AppColors.textPrimary,
@@ -58,7 +64,15 @@ class _MyAppState extends State<MyApp> {
         ),
         scaffoldBackgroundColor: AppColors.scaffoldBackground,
       ),
-      home: AppShell(db: widget.db, localeProvider: _localeProvider),
+      darkTheme: ThemeData(
+        colorSchemeSeed: AppColors.primary,
+        brightness: Brightness.dark,
+      ),
+      home: AppShell(
+        db: widget.db,
+        localeProvider: _localeProvider,
+        themeProvider: _themeProvider,
+      ),
       debugShowCheckedModeBanner: false,
     );
   }
