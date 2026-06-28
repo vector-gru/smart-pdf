@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
+import '../pages/open_source_licenses_page.dart';
 
 class AppDrawer extends StatelessWidget {
   final VoidCallback? onImportFiles;
@@ -40,7 +41,10 @@ class AppDrawer extends StatelessWidget {
                   _Item(icon: Icons.share_outlined, label: 'Share this app', onTap: () => Navigator.pop(context)),
                   _Item(icon: Icons.feedback_outlined, label: 'Send feedback', onTap: () => Navigator.pop(context)),
                   _Item(icon: Icons.privacy_tip_outlined, label: 'Privacy policy', onTap: () => Navigator.pop(context)),
-                  _Item(icon: Icons.source_outlined, label: 'Open Source Licenses', onTap: () => Navigator.pop(context)),
+                  _Item(icon: Icons.source_outlined, label: 'Open Source Licenses', onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const OpenSourceLicensesPage()));
+                  }),
                 ],
               ),
             ),
