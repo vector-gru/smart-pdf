@@ -44,6 +44,9 @@
   "themeDark": "Dark",
   "themeDevice": "Device theme",
 
+  "settingsAutoCrop": "Auto-crop",
+  "settingsAutoCropSubtitle": "Automatically detect and crop document edges on capture",
+
   "docActionDelete": "Delete",
   "docActionRemove": "Remove",
   "docActionCancel": "Cancel",

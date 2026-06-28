@@ -302,6 +302,18 @@ abstract class AppLocalizations {
   /// **'Device theme'**
   String get themeDevice;
 
+  /// No description provided for @settingsAutoCrop.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-crop'**
+  String get settingsAutoCrop;
+
+  /// No description provided for @settingsAutoCropSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically detect and crop document edges on capture'**
+  String get settingsAutoCropSubtitle;
+
   /// No description provided for @docActionDelete.
   ///
   /// In en, this message translates to:

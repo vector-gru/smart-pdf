@@ -112,6 +112,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get themeDevice => 'Device theme';
 
   @override
+  String get settingsAutoCrop => 'Auto-crop';
+
+  @override
+  String get settingsAutoCropSubtitle =>
+      'Automatically detect and crop document edges on capture';
+
+  @override
   String get docActionDelete => 'Delete';
 
   @override

@@ -44,6 +44,9 @@
   "themeDark": "Sombre",
   "themeDevice": "Thème de l'appareil",
 
+  "settingsAutoCrop": "Recadrage auto",
+  "settingsAutoCropSubtitle": "Détecter et recadrer automatiquement les bords du document à la capture",
+
   "docActionDelete": "Supprimer",
   "docActionRemove": "Retirer",
   "docActionCancel": "Annuler",

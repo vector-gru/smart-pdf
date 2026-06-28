@@ -9,6 +9,7 @@ import 'db/app_db.dart';
 import 'db/docs_notifier.dart';
 import 'l10n/locale_provider.dart';
 import 'theme/theme_provider.dart';
+import 'settings/settings_provider.dart';
 import 'pages/home_page.dart';
 import 'pages/files_page.dart';
 import 'pages/recent_page.dart';
@@ -22,11 +23,13 @@ class AppShell extends StatefulWidget {
   final AppDatabase db;
   final LocaleProvider localeProvider;
   final ThemeProvider themeProvider;
+  final SettingsProvider settingsProvider;
   const AppShell({
     super.key,
     required this.db,
     required this.localeProvider,
     required this.themeProvider,
+    required this.settingsProvider,
   });
 
   @override
@@ -69,6 +72,7 @@ class _AppShellState extends State<AppShell> {
       drawer: AppDrawer(
         localeProvider: widget.localeProvider,
         themeProvider: widget.themeProvider,
+        settingsProvider: widget.settingsProvider,
       ),
       body: Builder(
         builder: (context) {
@@ -79,7 +83,11 @@ class _AppShellState extends State<AppShell> {
               Positioned(
                 right: 16,
                 bottom: bottomInset + 32,
-                child: _ScanFab(db: widget.db, notifier: _notifier),
+                child: _ScanFab(
+                  db: widget.db,
+                  notifier: _notifier,
+                  settingsProvider: widget.settingsProvider,
+                ),
               ),
             ],
           );
@@ -178,7 +186,12 @@ class _FloatingNavBar extends StatelessWidget {
 class _ScanFab extends StatelessWidget {
   final AppDatabase db;
   final DocsNotifier notifier;
-  const _ScanFab({required this.db, required this.notifier});
+  final SettingsProvider settingsProvider;
+  const _ScanFab({
+    required this.db,
+    required this.notifier,
+    required this.settingsProvider,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -274,7 +287,12 @@ class _ScanFab extends StatelessWidget {
   void _navigate(BuildContext context, List<String> paths) async {
     if (!context.mounted) return;
     final result = await Navigator.of(context).push<ScannerResult>(
-      MaterialPageRoute(builder: (_) => ScannerPage(initialImages: paths)),
+      MaterialPageRoute(
+        builder: (_) => ScannerPage(
+          initialImages: paths,
+          autoCrop: settingsProvider.autoCrop,
+        ),
+      ),
     );
     if (result != null && result.images.isNotEmpty) {
       final created = await db.createDocumentFromImages(

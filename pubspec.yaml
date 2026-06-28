@@ -51,6 +51,7 @@ dependencies:
   webview_flutter: ^4.10.0
   flutter_svg: ^2.0.0
   package_info_plus: ^8.0.0
+  shared_preferences: ^2.5.3
   drift: ^2.7.0
   sqlite3_flutter_libs: ^0.5.5
 

@@ -22,7 +22,13 @@ class ScannerResult {
 class ScannerPage extends StatefulWidget {
   final List<String> initialImages;
   final String? initialTitle;
-  const ScannerPage({super.key, this.initialImages = const [], this.initialTitle});
+  final bool autoCrop;
+  const ScannerPage({
+    super.key,
+    this.initialImages = const [],
+    this.initialTitle,
+    this.autoCrop = true,
+  });
 
   @override
   State<ScannerPage> createState() => _ScannerPageState();
@@ -51,7 +57,9 @@ class _ScannerPageState extends State<ScannerPage> {
         }
       }
     });
-    _pageController = PageController(viewportFraction: AppConstants.scannerPageViewFraction);
+    _pageController = PageController(
+      viewportFraction: AppConstants.scannerPageViewFraction,
+    );
     _title = widget.initialTitle?.isNotEmpty == true
         ? widget.initialTitle!
         : _defaultTitle();
@@ -97,7 +105,9 @@ class _ScannerPageState extends State<ScannerPage> {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: GestureDetector(
-          onTap: () { if (_editingTitle) _commitTitle(); },
+          onTap: () {
+            if (_editingTitle) _commitTitle();
+          },
           child: Column(
             children: [
               _buildTopBar(),
@@ -188,7 +198,9 @@ class _ScannerPageState extends State<ScannerPage> {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const SizedBox(width: AppConstants.scannerTitleEditIconGap),
+                      const SizedBox(
+                        width: AppConstants.scannerTitleEditIconGap,
+                      ),
                       const Icon(
                         Icons.edit,
                         size: AppConstants.scannerTitleEditIconSize,
@@ -221,7 +233,9 @@ class _ScannerPageState extends State<ScannerPage> {
         ),
         decoration: BoxDecoration(
           color: Colors.grey[700],
-          borderRadius: BorderRadius.circular(AppConstants.scannerIndicatorRadius),
+          borderRadius: BorderRadius.circular(
+            AppConstants.scannerIndicatorRadius,
+          ),
         ),
         child: Text(
           l10n.scannerPageOf(_currentPage + 1, _images.length),
@@ -256,17 +270,23 @@ class _ScannerPageState extends State<ScannerPage> {
           child: Container(
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(AppConstants.scannerCardBorderRadius),
+              borderRadius: BorderRadius.circular(
+                AppConstants.scannerCardBorderRadius,
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: AppConstants.scannerCardShadowAlpha),
+                  color: Colors.black.withValues(
+                    alpha: AppConstants.scannerCardShadowAlpha,
+                  ),
                   blurRadius: AppConstants.scannerCardShadowBlur,
                   offset: const Offset(0, AppConstants.scannerPageItemShadowY),
                 ),
               ],
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(AppConstants.scannerCardBorderRadius),
+              borderRadius: BorderRadius.circular(
+                AppConstants.scannerCardBorderRadius,
+              ),
               child: Image.file(
                 File(path),
                 key: ValueKey('$path-$version'),
@@ -282,12 +302,36 @@ class _ScannerPageState extends State<ScannerPage> {
   Widget _buildBottomBar() {
     final l10n = AppLocalizations.of(context)!;
     final actions = <_ActionItem>[
-      _ActionItem(icon: Icons.document_scanner_outlined, label: l10n.scannerAddPage, onTap: _showAddPageSheet),
-      _ActionItem(icon: Icons.crop, label: l10n.scannerCrop, onTap: _cropCurrent),
-      _ActionItem(icon: Icons.lens_blur, label: l10n.scannerColor, onTap: _showColorSheet),
-      _ActionItem(icon: Icons.rotate_right, label: l10n.scannerRotate, onTap: _rotateCurrent),
-      _ActionItem(icon: Icons.reorder, label: l10n.scannerReorder, onTap: _reorderPages),
-      _ActionItem(icon: Icons.delete_outline, label: l10n.scannerDelete, onTap: _deleteCurrent),
+      _ActionItem(
+        icon: Icons.document_scanner_outlined,
+        label: l10n.scannerAddPage,
+        onTap: _showAddPageSheet,
+      ),
+      _ActionItem(
+        icon: Icons.crop,
+        label: l10n.scannerCrop,
+        onTap: _cropCurrent,
+      ),
+      _ActionItem(
+        icon: Icons.lens_blur,
+        label: l10n.scannerColor,
+        onTap: _showColorSheet,
+      ),
+      _ActionItem(
+        icon: Icons.rotate_right,
+        label: l10n.scannerRotate,
+        onTap: _rotateCurrent,
+      ),
+      _ActionItem(
+        icon: Icons.reorder,
+        label: l10n.scannerReorder,
+        onTap: _reorderPages,
+      ),
+      _ActionItem(
+        icon: Icons.delete_outline,
+        label: l10n.scannerDelete,
+        onTap: _deleteCurrent,
+      ),
     ];
 
     return Container(
@@ -303,7 +347,9 @@ class _ScannerPageState extends State<ScannerPage> {
         height: AppConstants.scannerBottomBarHeight,
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: AppConstants.scannerBottomBarItemPaddingH),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppConstants.scannerBottomBarItemPaddingH,
+          ),
           itemCount: actions.length,
           itemBuilder: (context, i) {
             final a = actions[i];
@@ -314,8 +360,14 @@ class _ScannerPageState extends State<ScannerPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(a.icon, size: AppConstants.scannerBottomBarIconSize, color: Colors.grey[700]),
-                    const SizedBox(height: AppConstants.scannerBottomBarIconGap),
+                    Icon(
+                      a.icon,
+                      size: AppConstants.scannerBottomBarIconSize,
+                      color: Colors.grey[700],
+                    ),
+                    const SizedBox(
+                      height: AppConstants.scannerBottomBarIconGap,
+                    ),
                     Text(
                       a.label,
                       style: TextStyle(
@@ -351,12 +403,18 @@ class _ScannerPageState extends State<ScannerPage> {
             ListTile(
               leading: const Icon(Icons.camera_alt_outlined),
               title: Text(l10n.scannerTakePhoto),
-              onTap: () { Navigator.pop(ctx); _pickFromCamera(); },
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickFromCamera();
+              },
             ),
             ListTile(
               leading: const Icon(Icons.image_outlined),
               title: Text(l10n.scannerSelectPhotos),
-              onTap: () { Navigator.pop(ctx); _pickFromGallery(); },
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickFromGallery();
+              },
             ),
           ],
         ),
@@ -402,7 +460,9 @@ class _ScannerPageState extends State<ScannerPage> {
   void _animateToCurrentPage() {
     _pageController.animateToPage(
       _currentPage,
-      duration: const Duration(milliseconds: AppConstants.scannerPageNavDuration),
+      duration: const Duration(
+        milliseconds: AppConstants.scannerPageNavDuration,
+      ),
       curve: Curves.easeInOut,
     );
   }
@@ -411,7 +471,10 @@ class _ScannerPageState extends State<ScannerPage> {
     final docs = await getTemporaryDirectory();
     final dest = p.join(docs.path, 'smart_pdf_temp');
     await Directory(dest).create(recursive: true);
-    final outPath = p.join(dest, '$prefix${DateTime.now().millisecondsSinceEpoch}.jpg');
+    final outPath = p.join(
+      dest,
+      '$prefix${DateTime.now().millisecondsSinceEpoch}.jpg',
+    );
     final compressed = await FlutterImageCompress.compressAndGetFile(
       sourcePath,
       outPath,
@@ -427,7 +490,10 @@ class _ScannerPageState extends State<ScannerPage> {
     if (_images.isEmpty) return;
     final workingPath = _images[_currentPage];
     if (!_originals.containsKey(workingPath)) {
-      _originals[workingPath] = await _saveToTemp(workingPath, prefix: '_orig_');
+      _originals[workingPath] = await _saveToTemp(
+        workingPath,
+        prefix: '_orig_',
+      );
     }
     if (!mounted) return;
     final result = await Navigator.of(context).push<bool>(
@@ -510,7 +576,12 @@ class _ScannerPageState extends State<ScannerPage> {
           processed = img.adjustColor(decoded, contrast: 1.9, brightness: 1.15);
           break;
         case 'magic2':
-          processed = img.adjustColor(decoded, contrast: 2.4, saturation: 0.3, brightness: 1.1);
+          processed = img.adjustColor(
+            decoded,
+            contrast: 2.4,
+            saturation: 0.3,
+            brightness: 1.1,
+          );
           break;
         default:
           processed = decoded;
@@ -529,7 +600,10 @@ class _ScannerPageState extends State<ScannerPage> {
     final file = File(path);
     final decoded = img.decodeImage(await file.readAsBytes());
     if (decoded == null) return;
-    final rotated = img.copyRotate(decoded, angle: AppConstants.scannerRotateAngle);
+    final rotated = img.copyRotate(
+      decoded,
+      angle: AppConstants.scannerRotateAngle,
+    );
     await file.writeAsBytes(img.encodeJpg(rotated, quality: 90));
     await FileImage(file).evict();
     _bumpVersion(path);
@@ -542,7 +616,11 @@ class _ScannerPageState extends State<ScannerPage> {
       MaterialPageRoute(builder: (_) => ReorderPage(images: List.of(_images))),
     );
     if (result != null) {
-      setState(() => _images..clear()..addAll(result));
+      setState(
+        () => _images
+          ..clear()
+          ..addAll(result),
+      );
     }
   }
 
@@ -555,10 +633,16 @@ class _ScannerPageState extends State<ScannerPage> {
         title: Text(l10n.scannerDeletePageTitle),
         content: Text(l10n.scannerDeletePageContent(_currentPage + 1)),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(l10n.docActionCancel)),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(l10n.docActionCancel),
+          ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(l10n.docActionDelete, style: const TextStyle(color: Colors.red)),
+            child: Text(
+              l10n.docActionDelete,
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
@@ -589,7 +673,11 @@ class _DashedLinePainter extends CustomPainter {
       ..strokeWidth = 1;
     double x = 0;
     while (x < size.width) {
-      canvas.drawLine(Offset(x, 0), Offset(x + AppConstants.scannerDashWidth, 0), paint);
+      canvas.drawLine(
+        Offset(x, 0),
+        Offset(x + AppConstants.scannerDashWidth, 0),
+        paint,
+      );
       x += AppConstants.scannerDashWidth + AppConstants.scannerDashSpace;
     }
   }

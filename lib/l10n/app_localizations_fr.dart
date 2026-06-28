@@ -114,6 +114,13 @@ class AppLocalizationsFr extends AppLocalizations {
   String get themeDevice => 'Thème de l\'appareil';
 
   @override
+  String get settingsAutoCrop => 'Recadrage auto';
+
+  @override
+  String get settingsAutoCropSubtitle =>
+      'Détecter et recadrer automatiquement les bords du document à la capture';
+
+  @override
   String get docActionDelete => 'Supprimer';
 
   @override

@@ -7,17 +7,21 @@ import '../constants/app_colors.dart';
 import '../constants/app_constants.dart';
 import '../l10n/locale_provider.dart';
 import '../theme/theme_provider.dart';
+import '../settings/settings_provider.dart';
 import '../pages/open_source_licenses_page.dart';
+import '../pages/settings_page.dart';
 import '../pages/privacy_policy_page.dart';
 import 'feedback_sheet.dart';
 
 class AppDrawer extends StatefulWidget {
   final LocaleProvider localeProvider;
   final ThemeProvider themeProvider;
+  final SettingsProvider settingsProvider;
   const AppDrawer({
     super.key,
     required this.localeProvider,
     required this.themeProvider,
+    required this.settingsProvider,
   });
 
   @override
@@ -170,7 +174,17 @@ class _AppDrawerState extends State<AppDrawer> {
                   _Item(
                     icon: Icons.settings_outlined,
                     label: l10n.drawerSettings,
-                    onTap: () => Navigator.pop(context),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => SettingsPage(
+                            settingsProvider: widget.settingsProvider,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                   _Item(
                     icon: Icons.brightness_4_outlined,

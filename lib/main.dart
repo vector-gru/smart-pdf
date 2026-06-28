@@ -5,17 +5,20 @@ import 'src/constants/app_colors.dart';
 import 'src/db/app_db.dart';
 import 'src/l10n/locale_provider.dart';
 import 'src/theme/theme_provider.dart';
+import 'src/settings/settings_provider.dart';
 import 'src/app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final db = AppDatabase();
-  runApp(MyApp(db: db));
+  final settingsProvider = await SettingsProvider.load();
+  runApp(MyApp(db: db, settingsProvider: settingsProvider));
 }
 
 class MyApp extends StatefulWidget {
   final AppDatabase db;
-  const MyApp({super.key, required this.db});
+  final SettingsProvider settingsProvider;
+  const MyApp({super.key, required this.db, required this.settingsProvider});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -72,6 +75,7 @@ class _MyAppState extends State<MyApp> {
         db: widget.db,
         localeProvider: _localeProvider,
         themeProvider: _themeProvider,
+        settingsProvider: widget.settingsProvider,
       ),
       debugShowCheckedModeBanner: false,
     );
