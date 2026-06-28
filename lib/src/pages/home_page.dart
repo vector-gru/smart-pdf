@@ -72,9 +72,9 @@ class _HomePageState extends State<HomePage> with DocActionsMixin {
         listenable: widget.notifier,
         builder: (context, _) {
           final allDocs = widget.notifier.all;
-          final docs = _searchQuery.isEmpty
-              ? allDocs
-              : allDocs.where((d) => d.title.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+          final docs = (allDocs.where((d) => !d.isImported).toList())
+              .where((d) => _searchQuery.isEmpty || d.title.toLowerCase().contains(_searchQuery.toLowerCase()))
+              .toList();
           if (docs.isEmpty) {
             return Center(
               child: Column(

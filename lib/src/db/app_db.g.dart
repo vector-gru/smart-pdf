@@ -104,6 +104,21 @@ class $DocumentsTable extends Documents
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _isImportedMeta = const VerificationMeta(
+    'isImported',
+  );
+  @override
+  late final GeneratedColumn<bool> isImported = GeneratedColumn<bool>(
+    'is_imported',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_imported" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -114,6 +129,7 @@ class $DocumentsTable extends Documents
     isFavorite,
     pagesCount,
     thumbnailPath,
+    isImported,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -179,6 +195,12 @@ class $DocumentsTable extends Documents
         ),
       );
     }
+    if (data.containsKey('is_imported')) {
+      context.handle(
+        _isImportedMeta,
+        isImported.isAcceptableOrUnknown(data['is_imported']!, _isImportedMeta),
+      );
+    }
     return context;
   }
 
@@ -220,6 +242,10 @@ class $DocumentsTable extends Documents
         DriftSqlType.string,
         data['${effectivePrefix}thumbnail_path'],
       ),
+      isImported: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_imported'],
+      )!,
     );
   }
 
@@ -238,6 +264,7 @@ class Document extends DataClass implements Insertable<Document> {
   final bool isFavorite;
   final int pagesCount;
   final String? thumbnailPath;
+  final bool isImported;
   const Document({
     required this.id,
     required this.title,
@@ -247,6 +274,7 @@ class Document extends DataClass implements Insertable<Document> {
     required this.isFavorite,
     required this.pagesCount,
     this.thumbnailPath,
+    required this.isImported,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -263,6 +291,7 @@ class Document extends DataClass implements Insertable<Document> {
     if (!nullToAbsent || thumbnailPath != null) {
       map['thumbnail_path'] = Variable<String>(thumbnailPath);
     }
+    map['is_imported'] = Variable<bool>(isImported);
     return map;
   }
 
@@ -280,6 +309,7 @@ class Document extends DataClass implements Insertable<Document> {
       thumbnailPath: thumbnailPath == null && nullToAbsent
           ? const Value.absent()
           : Value(thumbnailPath),
+      isImported: Value(isImported),
     );
   }
 
@@ -297,6 +327,7 @@ class Document extends DataClass implements Insertable<Document> {
       isFavorite: serializer.fromJson<bool>(json['isFavorite']),
       pagesCount: serializer.fromJson<int>(json['pagesCount']),
       thumbnailPath: serializer.fromJson<String?>(json['thumbnailPath']),
+      isImported: serializer.fromJson<bool>(json['isImported']),
     );
   }
   @override
@@ -311,6 +342,7 @@ class Document extends DataClass implements Insertable<Document> {
       'isFavorite': serializer.toJson<bool>(isFavorite),
       'pagesCount': serializer.toJson<int>(pagesCount),
       'thumbnailPath': serializer.toJson<String?>(thumbnailPath),
+      'isImported': serializer.toJson<bool>(isImported),
     };
   }
 
@@ -323,6 +355,7 @@ class Document extends DataClass implements Insertable<Document> {
     bool? isFavorite,
     int? pagesCount,
     Value<String?> thumbnailPath = const Value.absent(),
+    bool? isImported,
   }) => Document(
     id: id ?? this.id,
     title: title ?? this.title,
@@ -334,6 +367,7 @@ class Document extends DataClass implements Insertable<Document> {
     thumbnailPath: thumbnailPath.present
         ? thumbnailPath.value
         : this.thumbnailPath,
+    isImported: isImported ?? this.isImported,
   );
   Document copyWithCompanion(DocumentsCompanion data) {
     return Document(
@@ -351,6 +385,9 @@ class Document extends DataClass implements Insertable<Document> {
       thumbnailPath: data.thumbnailPath.present
           ? data.thumbnailPath.value
           : this.thumbnailPath,
+      isImported: data.isImported.present
+          ? data.isImported.value
+          : this.isImported,
     );
   }
 
@@ -364,7 +401,8 @@ class Document extends DataClass implements Insertable<Document> {
           ..write('updatedAt: $updatedAt, ')
           ..write('isFavorite: $isFavorite, ')
           ..write('pagesCount: $pagesCount, ')
-          ..write('thumbnailPath: $thumbnailPath')
+          ..write('thumbnailPath: $thumbnailPath, ')
+          ..write('isImported: $isImported')
           ..write(')'))
         .toString();
   }
@@ -379,6 +417,7 @@ class Document extends DataClass implements Insertable<Document> {
     isFavorite,
     pagesCount,
     thumbnailPath,
+    isImported,
   );
   @override
   bool operator ==(Object other) =>
@@ -391,7 +430,8 @@ class Document extends DataClass implements Insertable<Document> {
           other.updatedAt == this.updatedAt &&
           other.isFavorite == this.isFavorite &&
           other.pagesCount == this.pagesCount &&
-          other.thumbnailPath == this.thumbnailPath);
+          other.thumbnailPath == this.thumbnailPath &&
+          other.isImported == this.isImported);
 }
 
 class DocumentsCompanion extends UpdateCompanion<Document> {
@@ -403,6 +443,7 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
   final Value<bool> isFavorite;
   final Value<int> pagesCount;
   final Value<String?> thumbnailPath;
+  final Value<bool> isImported;
   final Value<int> rowid;
   const DocumentsCompanion({
     this.id = const Value.absent(),
@@ -413,6 +454,7 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
     this.isFavorite = const Value.absent(),
     this.pagesCount = const Value.absent(),
     this.thumbnailPath = const Value.absent(),
+    this.isImported = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   DocumentsCompanion.insert({
@@ -424,6 +466,7 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
     this.isFavorite = const Value.absent(),
     this.pagesCount = const Value.absent(),
     this.thumbnailPath = const Value.absent(),
+    this.isImported = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : title = Value(title),
        filePath = Value(filePath);
@@ -436,6 +479,7 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
     Expression<bool>? isFavorite,
     Expression<int>? pagesCount,
     Expression<String>? thumbnailPath,
+    Expression<bool>? isImported,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -447,6 +491,7 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
       if (isFavorite != null) 'is_favorite': isFavorite,
       if (pagesCount != null) 'pages_count': pagesCount,
       if (thumbnailPath != null) 'thumbnail_path': thumbnailPath,
+      if (isImported != null) 'is_imported': isImported,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -460,6 +505,7 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
     Value<bool>? isFavorite,
     Value<int>? pagesCount,
     Value<String?>? thumbnailPath,
+    Value<bool>? isImported,
     Value<int>? rowid,
   }) {
     return DocumentsCompanion(
@@ -471,6 +517,7 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
       isFavorite: isFavorite ?? this.isFavorite,
       pagesCount: pagesCount ?? this.pagesCount,
       thumbnailPath: thumbnailPath ?? this.thumbnailPath,
+      isImported: isImported ?? this.isImported,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -502,6 +549,9 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
     if (thumbnailPath.present) {
       map['thumbnail_path'] = Variable<String>(thumbnailPath.value);
     }
+    if (isImported.present) {
+      map['is_imported'] = Variable<bool>(isImported.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -519,6 +569,7 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
           ..write('isFavorite: $isFavorite, ')
           ..write('pagesCount: $pagesCount, ')
           ..write('thumbnailPath: $thumbnailPath, ')
+          ..write('isImported: $isImported, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -849,6 +900,7 @@ typedef $$DocumentsTableCreateCompanionBuilder =
       Value<bool> isFavorite,
       Value<int> pagesCount,
       Value<String?> thumbnailPath,
+      Value<bool> isImported,
       Value<int> rowid,
     });
 typedef $$DocumentsTableUpdateCompanionBuilder =
@@ -861,6 +913,7 @@ typedef $$DocumentsTableUpdateCompanionBuilder =
       Value<bool> isFavorite,
       Value<int> pagesCount,
       Value<String?> thumbnailPath,
+      Value<bool> isImported,
       Value<int> rowid,
     });
 
@@ -934,6 +987,11 @@ class $$DocumentsTableFilterComposer
 
   ColumnFilters<String> get thumbnailPath => $composableBuilder(
     column: $table.thumbnailPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isImported => $composableBuilder(
+    column: $table.isImported,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1011,6 +1069,11 @@ class $$DocumentsTableOrderingComposer
     column: $table.thumbnailPath,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get isImported => $composableBuilder(
+    column: $table.isImported,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$DocumentsTableAnnotationComposer
@@ -1049,6 +1112,11 @@ class $$DocumentsTableAnnotationComposer
 
   GeneratedColumn<String> get thumbnailPath => $composableBuilder(
     column: $table.thumbnailPath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isImported => $composableBuilder(
+    column: $table.isImported,
     builder: (column) => column,
   );
 
@@ -1114,6 +1182,7 @@ class $$DocumentsTableTableManager
                 Value<bool> isFavorite = const Value.absent(),
                 Value<int> pagesCount = const Value.absent(),
                 Value<String?> thumbnailPath = const Value.absent(),
+                Value<bool> isImported = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DocumentsCompanion(
                 id: id,
@@ -1124,6 +1193,7 @@ class $$DocumentsTableTableManager
                 isFavorite: isFavorite,
                 pagesCount: pagesCount,
                 thumbnailPath: thumbnailPath,
+                isImported: isImported,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -1136,6 +1206,7 @@ class $$DocumentsTableTableManager
                 Value<bool> isFavorite = const Value.absent(),
                 Value<int> pagesCount = const Value.absent(),
                 Value<String?> thumbnailPath = const Value.absent(),
+                Value<bool> isImported = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DocumentsCompanion.insert(
                 id: id,
@@ -1146,6 +1217,7 @@ class $$DocumentsTableTableManager
                 isFavorite: isFavorite,
                 pagesCount: pagesCount,
                 thumbnailPath: thumbnailPath,
+                isImported: isImported,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

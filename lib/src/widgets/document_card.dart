@@ -10,7 +10,7 @@ class DocumentCard extends StatefulWidget {
   final VoidCallback onTap;
   final void Function(Rect shareRect) onShare;
   final VoidCallback onDelete;
-  final VoidCallback onEdit;
+  final VoidCallback? onEdit;
   final VoidCallback onFavourite;
   final VoidCallback onRename;
   final VoidCallback onPrint;
@@ -21,7 +21,7 @@ class DocumentCard extends StatefulWidget {
     required this.onTap,
     required this.onShare,
     required this.onDelete,
-    required this.onEdit,
+    this.onEdit,
     required this.onFavourite,
     required this.onRename,
     required this.onPrint,
@@ -202,18 +202,23 @@ class _DocumentCardState extends State<DocumentCard> {
 
 class _ActionIcon extends StatelessWidget {
   final IconData icon;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _ActionIcon({super.key, required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
+    final disabled = onTap == null;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppConstants.actionIconSize),
       child: Padding(
         padding: const EdgeInsets.all(AppConstants.actionIconPadding),
-        child: Icon(icon, size: AppConstants.actionIconSize, color: AppColors.iconAction),
+        child: Icon(
+          icon,
+          size: AppConstants.actionIconSize,
+          color: disabled ? Colors.grey[300] : AppColors.iconAction,
+        ),
       ),
     );
   }

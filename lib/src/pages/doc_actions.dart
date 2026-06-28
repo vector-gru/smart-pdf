@@ -12,19 +12,30 @@ mixin DocActionsMixin<T extends StatefulWidget> on State<T> {
   DocsNotifier get notifier;
 
   Future<void> deleteDoc(Document doc) async {
+    final isImported = doc.isImported;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete document?'),
-        content: Text('Are you sure you want to delete "${doc.title}"?'),
+        title: Text(isImported ? 'Remove document?' : 'Delete document?'),
+        content: Text(
+          isImported
+              ? 'This will remove "${doc.title}" from SmartPDF. The original file on your device will not be affected.'
+              : 'Are you sure you want to delete "${doc.title}"?',
+        ),
         actions: [
           TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(isImported ? 'Remove' : 'Delete', style: const TextStyle(color: Colors.red)),
+          ),
         ],
       ),
     );
     if (confirm != true) return;
-    try { final f = File(await resolveDocPath(doc.filePath)); if (await f.exists()) await f.delete(); } catch (_) {}
+    // Only delete the physical file for scanned docs; imported docs leave the original untouched
+    if (!isImported) {
+      try { final f = File(await resolveDocPath(doc.filePath)); if (await f.exists()) await f.delete(); } catch (_) {}
+    }
     await db.deleteDocumentById(doc.id);
     await notifier.reload();
   }
