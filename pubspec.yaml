@@ -46,6 +46,9 @@ dependencies:
   uuid: ^4.5.1
   file_picker: ^11.0.2
   url_launcher: ^6.3.0
+  webview_flutter: ^4.10.0
+  flutter_svg: ^2.0.0
+  package_info_plus: ^8.0.0
   drift: ^2.7.0
   sqlite3_flutter_libs: ^0.5.5
 

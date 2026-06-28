@@ -51,7 +51,7 @@ class _FilesPageState extends State<FilesPage> with DocActionsMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(icon: const Icon(Icons.menu), onPressed: () {}),
+        automaticallyImplyLeading: false,
         title: _searchActive
             ? TextField(
                 controller: _searchController,

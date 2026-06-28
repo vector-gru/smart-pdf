@@ -161,4 +161,28 @@ class AppConstants {
   // Viewer page
   static const double viewerPdfPadding = 4.0;
   static const double viewerShareFallbackSize = 100.0;
+  // Feedback sheet
+  static const double feedbackHandleWidth = 40.0;
+  static const double feedbackHandleHeight = 4.0;
+  static const double feedbackHandleRadius = 2.0;
+  static const double feedbackSheetPaddingH = 20.0;
+  static const double feedbackSheetPaddingTop = 16.0;
+  static const double feedbackSheetPaddingBottom = 8.0;
+  static const double feedbackTitleFontSize = 17.0;
+  static const double feedbackSubtitleFontSize = 13.0;
+  static const double feedbackIconSize = 40.0;
+  static const double feedbackIconRadius = 10.0;
+  static const double feedbackIconSvgSize = 22.0;
+  static const double feedbackChevronSize = 20.0;
+  static const double feedbackItemFontSize = 15.0;
+  static const double feedbackSheetBorderRadius = 20.0;
+  // Share
+  static const String playStoreUrl =
+      'https://play.google.com/store/apps/details?id=com.hifivetech.smartpdf';
+
+  static const String shareAppMessage =
+      '📄 Check out SmartPDF — a fast, offline PDF scanner & reader for Android!\n\n'
+      'Scan documents, import images, create multi-page PDFs, and read them — all without internet.\n\n'
+      '📲 Download on Android:\n$playStoreUrl\n\n'
+      '🍎 iOS: Coming soon!';
 }

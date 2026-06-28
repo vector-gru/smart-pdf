@@ -1,6 +1,7 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:smart_pdf/src/widgets/camera_capture_page.dart';
+import 'widgets/app_drawer.dart';
+import 'widgets/camera_capture_page.dart';
 import 'constants/app_colors.dart';
 import 'constants/app_constants.dart';
 import 'db/app_db.dart';
@@ -24,6 +25,8 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   int _currentIndex = 0;
   late final DocsNotifier _notifier;
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+
 
   @override
   void initState() {
@@ -41,13 +44,15 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      HomePage(db: widget.db, notifier: _notifier),
+      HomePage(db: widget.db, notifier: _notifier, onMenuTap: () => _scaffoldKey.currentState?.openDrawer()),
       FilesPage(db: widget.db, notifier: _notifier),
       RecentPage(notifier: _notifier),
       FavouritePage(notifier: _notifier),
     ];
     return Scaffold(
+      key: _scaffoldKey,
       extendBody: true,
+      drawer: const AppDrawer(),
       body: Builder(
         builder: (context) {
           final bottomInset = MediaQuery.of(context).padding.bottom;

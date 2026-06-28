@@ -1,12 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../constants/app_colors.dart';
+import '../constants/app_constants.dart';
 import '../pages/open_source_licenses_page.dart';
+import '../pages/privacy_policy_page.dart';
+import 'feedback_sheet.dart';
 
-class AppDrawer extends StatelessWidget {
-  final VoidCallback? onImportFiles;
-  final VoidCallback? onImportImages;
+class AppDrawer extends StatefulWidget {
+  const AppDrawer({super.key});
 
-  const AppDrawer({super.key, this.onImportFiles, this.onImportImages});
+  @override
+  State<AppDrawer> createState() => _AppDrawerState();
+}
+
+class _AppDrawerState extends State<AppDrawer> {
+  String _version = '';
+
+  @override
+  void initState() {
+    super.initState();
+    PackageInfo.fromPlatform().then((i) => setState(() => _version = 'v${i.version}'));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,15 +48,28 @@ class AppDrawer extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 children: [
-                  _Item(icon: Icons.drive_folder_upload_outlined, label: 'Import files', onTap: () { Navigator.pop(context); onImportFiles?.call(); }),
-                  _Item(icon: Icons.image_outlined, label: 'Import Images', onTap: () { Navigator.pop(context); onImportImages?.call(); }),
                   _Item(icon: Icons.settings_outlined, label: 'Settings', onTap: () => Navigator.pop(context)),
                   _Item(icon: Icons.brightness_4_outlined, label: 'Theme', onTap: () => Navigator.pop(context)),
-                  _Item(icon: Icons.thumb_up_outlined, label: 'Rate app', onTap: () => Navigator.pop(context)),
+                  _Item(icon: Icons.thumb_up_outlined, label: 'Rate app', onTap: () {
+                    Navigator.pop(context);
+                    launchUrl(
+                      Uri.parse(AppConstants.playStoreUrl),
+                      mode: LaunchMode.externalApplication,
+                    );
+                  }),
                   _Item(icon: Icons.language_outlined, label: 'Language', onTap: () => Navigator.pop(context)),
-                  _Item(icon: Icons.share_outlined, label: 'Share this app', onTap: () => Navigator.pop(context)),
-                  _Item(icon: Icons.feedback_outlined, label: 'Send feedback', onTap: () => Navigator.pop(context)),
-                  _Item(icon: Icons.privacy_tip_outlined, label: 'Privacy policy', onTap: () => Navigator.pop(context)),
+                  _Item(icon: Icons.share_outlined, label: 'Share this app', onTap: () {
+                    Navigator.pop(context);
+                    Share.share(AppConstants.shareAppMessage);
+                  }),
+                  _Item(icon: Icons.feedback_outlined, label: 'Feedback & Social', onTap: () {
+                    Navigator.pop(context);
+                    showFeedbackSheet(context);
+                  }),
+                  _Item(icon: Icons.privacy_tip_outlined, label: 'Privacy policy', onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()));
+                  }),
                   _Item(icon: Icons.source_outlined, label: 'Open Source Licenses', onTap: () {
                     Navigator.pop(context);
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const OpenSourceLicensesPage()));
@@ -48,6 +77,19 @@ class AppDrawer extends StatelessWidget {
                 ],
               ),
             ),
+            if (_version.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4, bottom: 12),
+                child: Center(
+                  child: Text(
+                    _version,
+                    style: const TextStyle(
+                      fontSize: AppConstants.fontSubtitle,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
