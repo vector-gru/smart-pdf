@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pdfx/pdfx.dart';
 import 'package:share_plus/share_plus.dart';
+import '../constants/app_constants.dart';
 import '../db/app_db.dart';
 
 class ViewerPage extends StatefulWidget {
@@ -40,7 +41,7 @@ class _ViewerPageState extends State<ViewerPage> {
     final box = _shareKey.currentContext?.findRenderObject() as RenderBox?;
     final origin = box != null
         ? box.localToGlobal(Offset.zero) & box.size
-        : Rect.fromLTWH(0, 0, 100, 100);
+        : Rect.fromLTWH(0, 0, AppConstants.viewerShareFallbackSize, AppConstants.viewerShareFallbackSize);
     Share.shareXFiles(
       [XFile(absPath, mimeType: 'application/pdf')],
       subject: widget.title,
@@ -76,7 +77,7 @@ class _ViewerPageState extends State<ViewerPage> {
               ? const Center(child: CircularProgressIndicator())
               : PdfViewPinch(
                   controller: _pdfController!,
-                  padding: 4,
+                  padding: AppConstants.viewerPdfPadding,
                   backgroundDecoration: const BoxDecoration(),
                   scrollDirection: Axis.vertical,
                 ),

@@ -30,7 +30,7 @@ class _RecentPageState extends State<RecentPage> with DocActionsMixin {
       body: ListenableBuilder(
         listenable: widget.notifier,
         builder: (context, _) {
-          final docs = widget.notifier.recent;
+          final docs = widget.notifier.recent.where((d) => !d.isImported).toList();
           if (docs.isEmpty) {
             return Center(
               child: Column(

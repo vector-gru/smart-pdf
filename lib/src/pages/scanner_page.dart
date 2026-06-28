@@ -6,6 +6,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:image/image.dart' as img;
+import '../constants/app_constants.dart';
+import '../widgets/camera_capture_page.dart';
+import '../widgets/color_filter_sheet.dart';
 import 'crop_page.dart';
 import 'reorder_page.dart';
 
@@ -33,36 +36,27 @@ class _ScannerPageState extends State<ScannerPage> {
   bool _editingTitle = false;
   late TextEditingController _titleController;
   final FocusNode _titleFocus = FocusNode();
-  // Track a version key per image to bust Flutter's file image cache
   final Map<String, int> _imageVersions = {};
-  // Original (pre-crop) backup paths keyed by working path
   final Map<String, String> _originals = {};
 
   @override
   void initState() {
     super.initState();
     _images.addAll(widget.initialImages);
-    // Eagerly back up any pre-existing images so Default always restores the true original
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       for (final path in List.of(_images)) {
         if (!_originals.containsKey(path)) {
-          final origPath = await _saveToTemp(path, prefix: '_orig_');
-          _originals[path] = origPath;
+          _originals[path] = await _saveToTemp(path, prefix: '_orig_');
         }
       }
     });
-    _pageController = PageController(viewportFraction: 0.85);
-    if (widget.initialTitle != null && widget.initialTitle!.isNotEmpty) {
-      _title = widget.initialTitle!;
-    } else {
-      final now = DateTime.now();
-      _title = 'SmartPDF ${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year.toString().substring(2)} ${now.hour}.${now.minute.toString().padLeft(2, '0')}.${now.second.toString().padLeft(2, '0')}';
-    }
+    _pageController = PageController(viewportFraction: AppConstants.scannerPageViewFraction);
+    _title = widget.initialTitle?.isNotEmpty == true
+        ? widget.initialTitle!
+        : _defaultTitle();
     _titleController = TextEditingController(text: _title);
     _titleFocus.addListener(() {
-      if (!_titleFocus.hasFocus && _editingTitle) {
-        _commitTitle();
-      }
+      if (!_titleFocus.hasFocus && _editingTitle) _commitTitle();
     });
   }
 
@@ -72,6 +66,14 @@ class _ScannerPageState extends State<ScannerPage> {
     _titleController.dispose();
     _titleFocus.dispose();
     super.dispose();
+  }
+
+  String _defaultTitle() {
+    final now = DateTime.now();
+    return 'SmartPDF ${now.day.toString().padLeft(2, '0')}-'
+        '${now.month.toString().padLeft(2, '0')}-'
+        '${now.year.toString().substring(2)} '
+        '${now.hour}.${now.minute.toString().padLeft(2, '0')}.${now.second.toString().padLeft(2, '0')}';
   }
 
   void _commitTitle() {
@@ -85,9 +87,10 @@ class _ScannerPageState extends State<ScannerPage> {
 
   int _versionOf(String path) => _imageVersions[path] ?? 0;
 
-  void _bumpVersion(String path) {
-    _imageVersions[path] = (_imageVersions[path] ?? 0) + 1;
-  }
+  void _bumpVersion(String path) =>
+      _imageVersions[path] = (_imageVersions[path] ?? 0) + 1;
+
+  // ── Build ────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -95,9 +98,7 @@ class _ScannerPageState extends State<ScannerPage> {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: GestureDetector(
-          onTap: () {
-            if (_editingTitle) _commitTitle();
-          },
+          onTap: () { if (_editingTitle) _commitTitle(); },
           child: Column(
             children: [
               _buildTopBar(),
@@ -126,7 +127,11 @@ class _ScannerPageState extends State<ScannerPage> {
             onPressed: _saveAndReturn,
             child: const Text(
               'Save',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Colors.blue),
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                color: Colors.blue,
+              ),
             ),
           ),
         ],
@@ -136,13 +141,20 @@ class _ScannerPageState extends State<ScannerPage> {
 
   Widget _buildTitle() {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8, left: 32, right: 32),
+      padding: const EdgeInsets.only(
+        bottom: AppConstants.scannerTitlePaddingBottom,
+        left: AppConstants.scannerTitlePaddingH,
+        right: AppConstants.scannerTitlePaddingH,
+      ),
       child: _editingTitle
           ? TextField(
               controller: _titleController,
               focusNode: _titleFocus,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              style: const TextStyle(
+                fontSize: AppConstants.scannerTitleFontSize,
+                fontWeight: FontWeight.w500,
+              ),
               decoration: const InputDecoration(
                 isDense: true,
                 contentPadding: EdgeInsets.symmetric(vertical: 8),
@@ -169,16 +181,29 @@ class _ScannerPageState extends State<ScannerPage> {
                       Flexible(
                         child: Text(
                           _title,
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                          style: const TextStyle(
+                            fontSize: AppConstants.scannerTitleFontSize,
+                            fontWeight: FontWeight.w500,
+                          ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const SizedBox(width: 6),
-                      const Icon(Icons.edit, size: 18, color: Colors.grey),
+                      const SizedBox(width: AppConstants.scannerTitleEditIconGap),
+                      const Icon(
+                        Icons.edit,
+                        size: AppConstants.scannerTitleEditIconSize,
+                        color: Colors.grey,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 4),
-                  CustomPaint(size: const Size(200, 2), painter: _DashedLinePainter()),
+                  CustomPaint(
+                    size: const Size(
+                      AppConstants.scannerTitleDashedLineWidth,
+                      AppConstants.scannerTitleDashedLineHeight,
+                    ),
+                    painter: _DashedLinePainter(),
+                  ),
                 ],
               ),
             ),
@@ -189,14 +214,20 @@ class _ScannerPageState extends State<ScannerPage> {
     return Padding(
       padding: const EdgeInsets.only(top: 8, bottom: 4),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppConstants.scannerIndicatorPaddingH,
+          vertical: AppConstants.scannerIndicatorPaddingV,
+        ),
         decoration: BoxDecoration(
           color: Colors.grey[700],
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppConstants.scannerIndicatorRadius),
         ),
         child: Text(
           'Page ${_currentPage + 1} of ${_images.length}',
-          style: const TextStyle(color: Colors.white, fontSize: 13),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: AppConstants.scannerIndicatorFontSize,
+          ),
         ),
       ),
     );
@@ -216,21 +247,24 @@ class _ScannerPageState extends State<ScannerPage> {
         final path = _images[index];
         final version = _versionOf(path);
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppConstants.scannerPageItemPaddingH,
+            vertical: AppConstants.scannerPageItemPaddingV,
+          ),
           child: Container(
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(AppConstants.scannerCardBorderRadius),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.12),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
+                  color: Colors.black.withValues(alpha: AppConstants.scannerCardShadowAlpha),
+                  blurRadius: AppConstants.scannerCardShadowBlur,
+                  offset: const Offset(0, AppConstants.scannerPageItemShadowY),
                 ),
               ],
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(AppConstants.scannerCardBorderRadius),
               child: Image.file(
                 File(path),
                 key: ValueKey('$path-$version'),
@@ -258,27 +292,33 @@ class _ScannerPageState extends State<ScannerPage> {
         color: Colors.white,
         border: Border(top: BorderSide(color: Colors.grey[300]!)),
       ),
-      padding: const EdgeInsets.only(top: 12, bottom: 8),
+      padding: const EdgeInsets.only(
+        top: AppConstants.scannerBottomBarPaddingTop,
+        bottom: AppConstants.scannerBottomBarPaddingBottom,
+      ),
       child: SizedBox(
-        height: 64,
+        height: AppConstants.scannerBottomBarHeight,
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.symmetric(horizontal: AppConstants.scannerBottomBarItemPaddingH),
           itemCount: actions.length,
           itemBuilder: (context, i) {
             final a = actions[i];
             return SizedBox(
-              width: 76,
+              width: AppConstants.scannerBottomBarItemWidth,
               child: InkWell(
                 onTap: a.onTap,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(a.icon, size: 26, color: Colors.grey[700]),
-                    const SizedBox(height: 4),
+                    Icon(a.icon, size: AppConstants.scannerBottomBarIconSize, color: Colors.grey[700]),
+                    const SizedBox(height: AppConstants.scannerBottomBarIconGap),
                     Text(
                       a.label,
-                      style: TextStyle(fontSize: 11, color: Colors.grey[700]),
+                      style: TextStyle(
+                        fontSize: AppConstants.scannerBottomBarFontSize,
+                        color: Colors.grey[700],
+                      ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
@@ -291,7 +331,7 @@ class _ScannerPageState extends State<ScannerPage> {
     );
   }
 
-  // --- Actions ---
+  // ── Actions ──────────────────────────────────────────────────────────────
 
   void _saveAndReturn() {
     if (_editingTitle) _commitTitle();
@@ -309,18 +349,12 @@ class _ScannerPageState extends State<ScannerPage> {
             ListTile(
               leading: const Icon(Icons.camera_alt_outlined),
               title: const Text('Take another photo'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _pickFromCamera();
-              },
+              onTap: () { Navigator.pop(ctx); _pickFromCamera(); },
             ),
             ListTile(
               leading: const Icon(Icons.image_outlined),
               title: const Text('Select from photos'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _pickFromGallery();
-              },
+              onTap: () { Navigator.pop(ctx); _pickFromGallery(); },
             ),
           ],
         ),
@@ -342,13 +376,12 @@ class _ScannerPageState extends State<ScannerPage> {
       );
       if (path == null) return;
       final saved = await _saveToTemp(path);
-      final origPath = await _saveToTemp(path, prefix: '_orig_');
-      _originals[saved] = origPath;
+      _originals[saved] = await _saveToTemp(path, prefix: '_orig_');
       setState(() {
         _images.add(saved);
         _currentPage = _images.length - 1;
       });
-      _pageController.animateToPage(_currentPage, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+      _animateToCurrentPage();
     } catch (_) {}
   }
 
@@ -357,16 +390,21 @@ class _ScannerPageState extends State<ScannerPage> {
     if (list.isEmpty) return;
     for (final x in list) {
       final saved = await _saveToTemp(x.path);
-      final origPath = await _saveToTemp(x.path, prefix: '_orig_');
-      _originals[saved] = origPath;
+      _originals[saved] = await _saveToTemp(x.path, prefix: '_orig_');
       _images.add(saved);
     }
     setState(() => _currentPage = _images.length - 1);
-    _pageController.animateToPage(_currentPage, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+    _animateToCurrentPage();
   }
 
-  // Compress image for document use: max 2000px on longest side, 82% JPEG quality.
-  // This keeps the file print-sharp while reducing size ~60-70% vs raw camera output.
+  void _animateToCurrentPage() {
+    _pageController.animateToPage(
+      _currentPage,
+      duration: const Duration(milliseconds: AppConstants.scannerPageNavDuration),
+      curve: Curves.easeInOut,
+    );
+  }
+
   Future<String> _saveToTemp(String sourcePath, {String prefix = ''}) async {
     final docs = await getTemporaryDirectory();
     final dest = p.join(docs.path, 'smart_pdf_temp');
@@ -375,30 +413,21 @@ class _ScannerPageState extends State<ScannerPage> {
     final compressed = await FlutterImageCompress.compressAndGetFile(
       sourcePath,
       outPath,
-      quality: 82,
-      minWidth: 1200,
-      minHeight: 1200,
-      // keepExif false so orientation is baked into pixels (avoids crop mismatch)
+      quality: AppConstants.scannerCompressQuality,
+      minWidth: AppConstants.scannerCompressMinDimension,
+      minHeight: AppConstants.scannerCompressMinDimension,
       keepExif: false,
     );
-    // Fall back to plain copy if compression fails (e.g. unsupported format)
-    if (compressed == null) {
-      return (await File(sourcePath).copy(outPath)).path;
-    }
-    return compressed.path;
+    return compressed?.path ?? (await File(sourcePath).copy(outPath)).path;
   }
 
   void _cropCurrent() async {
     if (_images.isEmpty) return;
     final workingPath = _images[_currentPage];
-
-    // Ensure we have an original backup before any crop is applied
     if (!_originals.containsKey(workingPath)) {
-      final origPath = await _saveToTemp(workingPath, prefix: '_orig_');
-      _originals[workingPath] = origPath;
+      _originals[workingPath] = await _saveToTemp(workingPath, prefix: '_orig_');
     }
     if (!mounted) return;
-
     final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => CropPage(
@@ -418,12 +447,11 @@ class _ScannerPageState extends State<ScannerPage> {
   void _showColorSheet() {
     if (_images.isEmpty) return;
     final path = _images[_currentPage];
-    final origPath = _originals[path] ?? path;
     showModalBottomSheet(
       context: context,
-      builder: (ctx) => _ColorFilterSheet(
+      builder: (ctx) => ColorFilterSheet(
         imagePath: path,
-        originalPath: origPath,
+        originalPath: _originals[path] ?? path,
         onApply: (filterName, applyToAll) {
           Navigator.pop(ctx);
           _applyColorFilter(filterName, applyToAll);
@@ -439,24 +467,18 @@ class _ScannerPageState extends State<ScannerPage> {
 
     for (final idx in indices) {
       final path = _images[idx];
-
-      // Original should already exist; create only as a safety fallback
       if (!_originals.containsKey(path)) {
-        final origPath = await _saveToTemp(path, prefix: '_orig_');
-        _originals[path] = origPath;
+        _originals[path] = await _saveToTemp(path, prefix: '_orig_');
       }
-
       final file = File(path);
 
       if (filterName == 'default') {
-        // Restore original
         await File(_originals[path]!).copy(path);
         await FileImage(file).evict();
         _bumpVersion(path);
         continue;
       }
 
-      // Always decode from the original so filters never accumulate
       final bytes = await File(_originals[path]!).readAsBytes();
       final decoded = img.decodeImage(bytes);
       if (decoded == null) continue;
@@ -464,40 +486,35 @@ class _ScannerPageState extends State<ScannerPage> {
       img.Image processed;
       switch (filterName) {
         case 'bw1':
-          // High-contrast black & white
-          final gray = img.grayscale(decoded);
-          processed = img.adjustColor(gray, contrast: 2.5);
+          processed = img.adjustColor(img.grayscale(decoded), contrast: 2.5);
           break;
         case 'bw2':
-          // Threshold binarization — pure black & white
-          final gray2 = img.grayscale(decoded);
-          processed = img.Image(width: gray2.width, height: gray2.height);
-          for (int y = 0; y < gray2.height; y++) {
-            for (int x = 0; x < gray2.width; x++) {
-              final lum = img.getLuminance(gray2.getPixel(x, y));
-              final v = lum > 140 ? 255 : 0;
+          final gray = img.grayscale(decoded);
+          processed = img.Image(width: gray.width, height: gray.height);
+          for (int y = 0; y < gray.height; y++) {
+            for (int x = 0; x < gray.width; x++) {
+              final lum = img.getLuminance(gray.getPixel(x, y));
+              final v = lum > AppConstants.filterBw2Threshold
+                  ? AppConstants.filterBw2White
+                  : 0;
               processed.setPixelRgb(x, y, v, v, v);
             }
           }
           break;
         case 'gray':
-          // Neutral grayscale — no brightness boost
           processed = img.grayscale(decoded);
           break;
         case 'magic1':
-          // Strong contrast + brightness boost (~3× original effect)
           processed = img.adjustColor(decoded, contrast: 1.9, brightness: 1.15);
           break;
         case 'magic2':
-          // Very strong contrast + heavy desaturation (~6× original effect)
           processed = img.adjustColor(decoded, contrast: 2.4, saturation: 0.3, brightness: 1.1);
           break;
         default:
           processed = decoded;
       }
 
-      final output = img.encodeJpg(processed, quality: 90);
-      await file.writeAsBytes(output);
+      await file.writeAsBytes(img.encodeJpg(processed, quality: 90));
       await FileImage(file).evict();
       _bumpVersion(path);
     }
@@ -508,12 +525,10 @@ class _ScannerPageState extends State<ScannerPage> {
     if (_images.isEmpty) return;
     final path = _images[_currentPage];
     final file = File(path);
-    final bytes = await file.readAsBytes();
-    final decoded = img.decodeImage(bytes);
+    final decoded = img.decodeImage(await file.readAsBytes());
     if (decoded == null) return;
-    final rotated = img.copyRotate(decoded, angle: 90);
-    final output = img.encodeJpg(rotated, quality: 90);
-    await file.writeAsBytes(output);
+    final rotated = img.copyRotate(decoded, angle: AppConstants.scannerRotateAngle);
+    await file.writeAsBytes(img.encodeJpg(rotated, quality: 90));
     await FileImage(file).evict();
     _bumpVersion(path);
     setState(() {});
@@ -525,9 +540,7 @@ class _ScannerPageState extends State<ScannerPage> {
       MaterialPageRoute(builder: (_) => ReorderPage(images: List.of(_images))),
     );
     if (result != null) {
-      setState(() => _images
-        ..clear()
-        ..addAll(result));
+      setState(() => _images..clear()..addAll(result));
     }
   }
 
@@ -554,13 +567,11 @@ class _ScannerPageState extends State<ScannerPage> {
         _currentPage = _images.length - 1;
       }
     });
-    if (_images.isNotEmpty) {
-      _pageController.jumpToPage(_currentPage);
-    }
+    if (_images.isNotEmpty) _pageController.jumpToPage(_currentPage);
   }
 }
 
-// --- Helpers ---
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
 class _ActionItem {
   final IconData icon;
@@ -575,251 +586,13 @@ class _DashedLinePainter extends CustomPainter {
     final paint = Paint()
       ..color = Colors.grey
       ..strokeWidth = 1;
-    const dashWidth = 4.0;
-    const dashSpace = 3.0;
     double x = 0;
     while (x < size.width) {
-      canvas.drawLine(Offset(x, 0), Offset(x + dashWidth, 0), paint);
-      x += dashWidth + dashSpace;
+      canvas.drawLine(Offset(x, 0), Offset(x + AppConstants.scannerDashWidth, 0), paint);
+      x += AppConstants.scannerDashWidth + AppConstants.scannerDashSpace;
     }
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _ColorFilterSheet extends StatefulWidget {
-  final String imagePath;
-  final String originalPath;
-  final void Function(String filterName, bool applyToAll) onApply;
-  const _ColorFilterSheet({required this.imagePath, required this.originalPath, required this.onApply});
-
-  @override
-  State<_ColorFilterSheet> createState() => _ColorFilterSheetState();
-}
-
-class _ColorFilterSheetState extends State<_ColorFilterSheet> {
-  String _selected = 'default';
-  bool _applyToAll = false;
-
-  static const _filters = [
-    ('default', 'Default'),
-    ('magic1', 'Magic 1'),
-    ('magic2', 'Magic 2'),
-    ('bw1', 'B&W 1'),
-    ('bw2', 'B&W 2'),
-    ('gray', 'Gray'),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              height: 120,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                separatorBuilder: (_, _) => const SizedBox(width: 12),
-                itemCount: _filters.length,
-                itemBuilder: (context, i) {
-                  final (id, label) = _filters[i];
-                  final isSelected = _selected == id;
-                  return GestureDetector(
-                    onTap: () => setState(() => _selected = id),
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 80,
-                          height: 90,
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: isSelected ? Colors.blue : Colors.grey[300]!,
-                              width: isSelected ? 2.5 : 1,
-                            ),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(3),
-                            child: ColorFiltered(
-                              colorFilter: _colorFilterFor(id) ?? const ColorFilter.mode(Colors.transparent, BlendMode.dst),
-                              child: Image.file(
-                                File(widget.originalPath),
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(label, style: TextStyle(
-                          fontSize: 12,
-                          color: isSelected ? Colors.blue : Colors.grey[700],
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                        )),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Apply to all pages', style: TextStyle(fontSize: 15)),
-                  Switch(
-                    value: _applyToAll,
-                    onChanged: (v) => setState(() => _applyToAll = v),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: () => widget.onApply(_selected, _applyToAll),
-              child: const Text('Apply'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  ColorFilter? _colorFilterFor(String id) {
-    switch (id) {
-      case 'magic1':
-        // contrast ~1.9, brightness ~1.15 preview
-        return const ColorFilter.matrix([
-           1.9,  0,    0,    0, -50,
-           0,    1.9,  0,    0, -50,
-           0,    0,    1.9,  0, -50,
-           0,    0,    0,    1,   0,
-        ]);
-      case 'magic2':
-        // high contrast + desaturated preview
-        return const ColorFilter.matrix([
-           0.77, 0.63, 0.24, 0, -40,
-           0.07, 1.53, 0.06, 0, -40,
-           0.02, 0.18, 1.44, 0, -40,
-           0,    0,    0,    1,   0,
-        ]);
-      case 'bw1':
-        // High contrast greyscale preview
-        return const ColorFilter.matrix([
-          0.299, 0.587, 0.114, 0, 60,
-          0.299, 0.587, 0.114, 0, 60,
-          0.299, 0.587, 0.114, 0, 60,
-          0,     0,     0,     1, 0,
-        ]);
-      case 'bw2':
-        // Near-threshold b&w preview
-        return const ColorFilter.matrix([
-          1.5, 1.5, 1.5, 0, -200,
-          1.5, 1.5, 1.5, 0, -200,
-          1.5, 1.5, 1.5, 0, -200,
-          0,   0,   0,   1,    0,
-        ]);
-      case 'gray':
-        return const ColorFilter.matrix([
-          0.299, 0.587, 0.114, 0, 0,
-          0.299, 0.587, 0.114, 0, 0,
-          0.299, 0.587, 0.114, 0, 0,
-          0,     0,     0,     1, 0,
-        ]);
-      default:
-        return null;
-    }
-  }
-}
-
-// ── Camera capture screen (guarantees rear camera) ───────────────────────
-class CameraCapturePage extends StatefulWidget {
-  final CameraDescription camera;
-  const CameraCapturePage({super.key, required this.camera});
-
-  @override
-  State<CameraCapturePage> createState() => _CameraCapturPageState();
-}
-
-class _CameraCapturPageState extends State<CameraCapturePage> {
-  late CameraController _ctrl;
-  bool _ready = false;
-  bool _capturing = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = CameraController(widget.camera, ResolutionPreset.max, enableAudio: false);
-    _ctrl.initialize().then((_) {
-      if (mounted) setState(() => _ready = true);
-    });
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _capture() async {
-    if (_capturing) return;
-    setState(() => _capturing = true);
-    try {
-      final file = await _ctrl.takePicture();
-      if (mounted) Navigator.pop(context, file.path);
-    } catch (_) {
-      if (mounted) setState(() => _capturing = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            if (_ready)
-              Center(child: CameraPreview(_ctrl))
-            else
-              const Center(child: CircularProgressIndicator(color: Colors.white)),
-            // Close
-            Positioned(
-              top: 8, left: 8,
-              child: IconButton(
-                icon: const Icon(Icons.close, color: Colors.white, size: 30),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ),
-            // Shutter
-            Positioned(
-              bottom: 24, left: 0, right: 0,
-              child: Center(
-                child: GestureDetector(
-                  onTap: _capture,
-                  child: Container(
-                    width: 70, height: 70,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 4),
-                      color: _capturing ? Colors.grey : Colors.white.withValues(alpha: 0.2),
-                    ),
-                    child: _capturing
-                        ? const Padding(padding: EdgeInsets.all(18), child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
-                        : null,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

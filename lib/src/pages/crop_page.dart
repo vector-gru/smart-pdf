@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
+import '../constants/app_constants.dart';
 
 /// [workingPath]  — written by Done (may equal originalPath on first crop).
 /// [originalPath] — never mutated; all crops start from here.
@@ -98,7 +99,7 @@ class _CropPageState extends State<CropPage> {
     final src = _effectiveImage();
     if (src == null) return;
 
-    const ds = 4;
+    const ds = AppConstants.cropAutoDetectDownscale;
     final sw = src.width ~/ ds, sh = src.height ~/ ds;
     if (sw < 8 || sh < 8) return;
 
@@ -121,16 +122,14 @@ class _CropPageState extends State<CropPage> {
       return s / sh;
     }
 
-    // Sample background luminance from the outermost 3% strip on each side
-    final edgePx = math.max(1, (sh * 0.03).round());
-    final edgePxW = math.max(1, (sw * 0.03).round());
+    final edgePx = math.max(1, (sh * AppConstants.cropAutoDetectEdgeFrac).round());
+    final edgePxW = math.max(1, (sw * AppConstants.cropAutoDetectEdgeFrac).round());
     double bgTop = 0, bgBot = 0, bgL = 0, bgR = 0;
     for (int i = 0; i < edgePx; i++) { bgTop += rowAvg(i); bgBot += rowAvg(sh - 1 - i); }
     for (int i = 0; i < edgePxW; i++) { bgL += colAvg(i); bgR += colAvg(sw - 1 - i); }
     bgTop /= edgePx; bgBot /= edgePx; bgL /= edgePxW; bgR /= edgePxW;
 
-    // A row/col is "page" when its avg luminance exceeds background by threshold
-    const lumThresh = 0.10; // page must be ≥10% brighter than background strip
+    const lumThresh = AppConstants.cropAutoDetectLumThresh;
 
     // Scan from each edge inward to find where the page starts
     int top = 0, bottom = sh - 1, left = 0, right = sw - 1;
@@ -147,10 +146,9 @@ class _CropPageState extends State<CropPage> {
       if (colAvg(x) > bgR + lumThresh) { right = x; break; }
     }
 
-    // If luminance scan found almost nothing, fall back to gradient bbox
-    final lumOk = (right - left) > sw * 0.20 && (bottom - top) > sh * 0.20;
+    final lumOk = (right - left) > sw * AppConstants.cropAutoDetectMinCoverage &&
+        (bottom - top) > sh * AppConstants.cropAutoDetectMinCoverage;
     if (!lumOk) {
-      // Gradient fallback
       final grad = List.generate(sh, (_) => List.filled(sw, 0.0));
       for (int y = 1; y < sh - 1; y++) {
         for (int x = 1; x < sw - 1; x++) {
@@ -161,7 +159,7 @@ class _CropPageState extends State<CropPage> {
       }
       double maxG = 0;
       for (final row in grad) { for (final v in row) { if (v > maxG) maxG = v; } }
-      final thresh = maxG * 0.30;
+      final thresh = maxG * AppConstants.cropGradFallbackThresh;
       left = sw; right = 0; top = sh; bottom = 0;
       for (int y = 0; y < sh; y++) {
         for (int x = 0; x < sw; x++) {
@@ -173,11 +171,11 @@ class _CropPageState extends State<CropPage> {
           }
         }
       }
-      if ((right - left) < sw * 0.20 || (bottom - top) < sh * 0.20) return;
+      if ((right - left) < sw * AppConstants.cropAutoDetectMinCoverage ||
+          (bottom - top) < sh * AppConstants.cropAutoDetectMinCoverage) return;
     }
 
-    // Tiny inward margin so handles sit just inside the detected boundary
-    const margin = 0.008;
+    const margin = AppConstants.cropAutoDetectMargin;
     final l = (left   / sw).clamp(0.0, 1.0) + margin;
     final r = (right  / sw).clamp(0.0, 1.0) - margin;
     final t = (top    / sh).clamp(0.0, 1.0) + margin;
@@ -220,7 +218,7 @@ class _CropPageState extends State<CropPage> {
     final warped = await _computeWarp();
     if (warped == null || !mounted) return;
     setState(() {
-      _previewBytes = Uint8List.fromList(img.encodeJpg(warped, quality: 88));
+      _previewBytes = Uint8List.fromList(img.encodeJpg(warped, quality: AppConstants.cropPreviewJpgQuality));
       _previewing = true;
     });
   }
@@ -290,7 +288,7 @@ class _CropPageState extends State<CropPage> {
     final h = List.generate(8, (i) => aug[i][8]);
     // h = [h0,h1,h2,h3,h4,h5,h6,h7], h8=1
 
-    final warped = img.Image(width: outW, height: outH);
+    final warped = img.Image(width: outW, height: outH); // perspective warp output
 
     for (int dy = 0; dy < outH; dy++) {
       for (int dx = 0; dx < outW; dx++) {
@@ -330,13 +328,13 @@ class _CropPageState extends State<CropPage> {
     final warped = await _computeWarp();
     if (warped == null) { if (mounted) Navigator.pop(context, true); return; }
     final workingFile = File(widget.workingPath);
-    await workingFile.writeAsBytes(img.encodeJpg(warped, quality: 90));
+    await workingFile.writeAsBytes(img.encodeJpg(warped, quality: AppConstants.cropDoneJpgQuality));
     await FileImage(workingFile).evict();
     if (mounted) Navigator.pop(context, true);
   }
 
   // ── Rect of image inside its container (BoxFit.contain + padding) ──────────
-  static const _kPad = 20.0; // px breathing room on each side
+  static const _kPad = AppConstants.cropPad;
   Rect _imgRect(Size container) {
     final avW = container.width  - _kPad * 2;
     final avH = container.height - _kPad * 2;
@@ -365,7 +363,7 @@ class _CropPageState extends State<CropPage> {
   }
 
   int _nearestHandle(Offset pos, List<Offset> handles) {
-    const threshold = 40.0;
+    const threshold = AppConstants.cropHandleTapThreshold;
     int best = -1;
     double bestDist = double.infinity;
     for (int i = 0; i < handles.length; i++) {
@@ -417,26 +415,32 @@ class _CropPageState extends State<CropPage> {
   Widget _buildAppBar() {
     return Container(
       color: Colors.black,
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppConstants.cropAppBarPaddingH,
+        vertical: AppConstants.cropAppBarPaddingV,
+      ),
       child: Row(
         children: [
           IconButton(
             icon: const Icon(Icons.close, size: 28, color: Colors.white),
             onPressed: () => Navigator.pop(context, false),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppConstants.cropAppBarPaddingH),
           const Text('Adjust borders',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white)),
+              style: TextStyle(fontSize: AppConstants.cropAppBarTitleFontSize, fontWeight: FontWeight.w600, color: Colors.white)),
           const Spacer(),
           if (_previewing)
             Container(
               margin: const EdgeInsets.only(right: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppConstants.cropPreviewBadgePaddingH,
+                vertical: AppConstants.cropPreviewBadgePaddingV,
+              ),
               decoration: BoxDecoration(
                 color: Colors.blue,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppConstants.cropPreviewBadgeRadius),
               ),
-              child: const Text('PREVIEW', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+              child: const Text('PREVIEW', style: TextStyle(color: Colors.white, fontSize: AppConstants.cropPreviewBadgeFontSize, fontWeight: FontWeight.w700)),
             ),
         ],
       ),
@@ -455,16 +459,19 @@ class _CropPageState extends State<CropPage> {
             ),
           ),
           Positioned(
-            bottom: 12, left: 0, right: 0,
+            bottom: AppConstants.cropPreviewLabelBottom, left: 0, right: 0,
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppConstants.cropPreviewLabelPaddingH,
+                  vertical: AppConstants.cropPreviewLabelPaddingV,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.black54,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(AppConstants.cropPreviewLabelRadius),
                 ),
                 child: const Text('This is what will be saved',
-                    style: TextStyle(color: Colors.white, fontSize: 12)),
+                    style: TextStyle(color: Colors.white, fontSize: AppConstants.cropPreviewLabelFontSize)),
               ),
             ),
           ),
@@ -488,7 +495,7 @@ class _CropPageState extends State<CropPage> {
         );
       } else {
         final rotated = _effectiveImage()!;
-        final bytes = Uint8List.fromList(img.encodeJpg(rotated, quality: 85));
+        final bytes = Uint8List.fromList(img.encodeJpg(rotated, quality: AppConstants.cropDisplayJpgQuality));
         imageWidget = Image.memory(
           bytes,
           key: ValueKey('rot$_rotateDeg'),
@@ -516,34 +523,34 @@ class _CropPageState extends State<CropPage> {
                 ),
               ),
             ),
-            // Corner handles (larger tap targets)
             for (int i = 0; i < 4; i++)
               Positioned(
-                left: handles[i].dx - 14,
-                top:  handles[i].dy - 14,
+                left: handles[i].dx - AppConstants.cropHandleCornerRadius,
+                top:  handles[i].dy - AppConstants.cropHandleCornerRadius,
                 child: IgnorePointer(
                   child: Container(
-                    width: 28, height: 28,
+                    width: AppConstants.cropHandleCornerSize,
+                    height: AppConstants.cropHandleCornerSize,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: Colors.blue,
-                      border: Border.all(color: Colors.white, width: 2),
+                      border: Border.all(color: Colors.white, width: AppConstants.cropHandleBorderWidth),
                     ),
                   ),
                 ),
               ),
-            // Mid-edge handles (smaller)
             for (int i = 4; i < 8; i++)
               Positioned(
-                left: handles[i].dx - 9,
-                top:  handles[i].dy - 9,
+                left: handles[i].dx - AppConstants.cropHandleMidRadius,
+                top:  handles[i].dy - AppConstants.cropHandleMidRadius,
                 child: IgnorePointer(
                   child: Container(
-                    width: 18, height: 18,
+                    width: AppConstants.cropHandleMidSize,
+                    height: AppConstants.cropHandleMidSize,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: Colors.white.withValues(alpha: 0.9),
-                      border: Border.all(color: Colors.blue, width: 2),
+                      border: Border.all(color: Colors.blue, width: AppConstants.cropHandleBorderWidth),
                     ),
                   ),
                 ),
@@ -556,13 +563,19 @@ class _CropPageState extends State<CropPage> {
 
   Widget _buildPageIndicator() {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: AppConstants.cropIndicatorMarginV),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-        decoration: BoxDecoration(color: Colors.grey[800], borderRadius: BorderRadius.circular(16)),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppConstants.cropIndicatorPaddingH,
+          vertical: AppConstants.cropIndicatorPaddingV,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.grey[800],
+          borderRadius: BorderRadius.circular(AppConstants.cropIndicatorRadius),
+        ),
         child: Text(
           'Page ${widget.currentPage + 1} of ${widget.totalPages}',
-          style: const TextStyle(color: Colors.white, fontSize: 12),
+          style: const TextStyle(color: Colors.white, fontSize: AppConstants.cropIndicatorFontSize),
         ),
       ),
     );
@@ -571,7 +584,7 @@ class _CropPageState extends State<CropPage> {
   Widget _buildBottomBar() {
     return Container(
       color: Colors.black,
-      padding: const EdgeInsets.only(top: 10, bottom: 10),
+      padding: const EdgeInsets.symmetric(vertical: AppConstants.cropBottomBarPaddingV),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
@@ -595,13 +608,13 @@ class _CropPageState extends State<CropPage> {
     return InkWell(
       onTap: onTap,
       child: SizedBox(
-        width: 64,
+        width: AppConstants.cropBtnWidth,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 24, color: c),
-            const SizedBox(height: 3),
-            Text(label, style: TextStyle(fontSize: 10, color: c,
+            Icon(icon, size: AppConstants.cropBtnIconSize, color: c),
+            const SizedBox(height: AppConstants.cropBtnIconGap),
+            Text(label, style: TextStyle(fontSize: AppConstants.cropBtnFontSize, color: c,
                 fontWeight: color != null ? FontWeight.w700 : FontWeight.normal)),
           ],
         ),
@@ -640,22 +653,19 @@ class _CropPainter extends CustomPainter {
       Paint()..color = const Color(0xFF1A1A1A),
     );
 
-    // Dim area outside crop quad but inside image
     canvas.drawPath(
       Path.combine(PathOperation.difference, Path()..addRect(imgRect), cropPath),
-      Paint()..color = Colors.black.withValues(alpha: 0.50),
+      Paint()..color = Colors.black.withValues(alpha: AppConstants.cropDimAlpha),
     );
 
-    // Crop border
     canvas.drawPath(cropPath, Paint()
       ..color = Colors.blue
-      ..strokeWidth = 2.5
+      ..strokeWidth = AppConstants.cropBorderWidth
       ..style = PaintingStyle.stroke);
 
-    // Rule-of-thirds grid inside quad
     final g = Paint()
-      ..color = Colors.white.withValues(alpha: 0.4)
-      ..strokeWidth = 0.8;
+      ..color = Colors.white.withValues(alpha: AppConstants.cropGridAlpha)
+      ..strokeWidth = AppConstants.cropGridStrokeWidth;
     for (int i = 1; i <= 2; i++) {
       final t = i / 3.0;
       canvas.drawLine(

@@ -1,5 +1,6 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:smart_pdf/src/widgets/camera_capture_page.dart';
 import 'constants/app_colors.dart';
 import 'constants/app_constants.dart';
 import 'db/app_db.dart';

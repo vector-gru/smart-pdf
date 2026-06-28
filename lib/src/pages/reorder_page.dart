@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../constants/app_constants.dart';
 
 /// Returns the reordered list of image paths, or null if cancelled.
 class ReorderPage extends StatefulWidget {
@@ -65,11 +66,11 @@ class _ReorderPageState extends State<ReorderPage> {
   Widget _buildAppBar() {
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: AppConstants.cropAppBarPaddingH, vertical: AppConstants.cropAppBarPaddingV),
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.close, size: 28),
+            icon: Icon(Icons.close, size: AppConstants.reorderAppBarIconSize),
             onPressed: () => Navigator.pop(context, null),
           ),
           const Expanded(
@@ -79,7 +80,7 @@ class _ReorderPageState extends State<ReorderPage> {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.check, size: 28, color: Colors.blue),
+            icon: Icon(Icons.check, size: AppConstants.reorderAppBarIconSize, color: Colors.blue),
             onPressed: () => Navigator.pop(context, _images),
           ),
         ],
@@ -89,15 +90,15 @@ class _ReorderPageState extends State<ReorderPage> {
 
   Widget _buildGrid() {
     return LayoutBuilder(builder: (context, constraints) {
-      final itemWidth = (constraints.maxWidth - 24) / 2; // 2 columns, 8px padding each side + 8px gap
-      const itemAspect = 0.72; // portrait ratio
+      final itemWidth = (constraints.maxWidth - 24) / 2;
+      const itemAspect = AppConstants.reorderCellAspect;
       final itemHeight = itemWidth / itemAspect;
 
       return SingleChildScrollView(
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(AppConstants.reorderGridPadding),
         child: Wrap(
-          spacing: 8,
-          runSpacing: 12,
+          spacing: AppConstants.reorderGridSpacing,
+          runSpacing: AppConstants.reorderGridRunSpacing,
           children: List.generate(_images.length, (index) {
             return _buildCell(index, itemWidth, itemHeight);
           }),
@@ -125,7 +126,7 @@ class _ReorderPageState extends State<ReorderPage> {
             children: [
               LongPressDraggable<int>(
                 data: index,
-                delay: const Duration(milliseconds: 300),
+                delay: const Duration(milliseconds: AppConstants.reorderDragDelayMs),
                 onDragStarted: () => _onDragStarted(index),
                 onDragEnd: (_) => _onDragEnd(index),
                 onDraggableCanceled: (velocity, offset) => setState(() {
@@ -138,11 +139,11 @@ class _ReorderPageState extends State<ReorderPage> {
                 child: _buildThumbnail(path, width, height,
                     isDragging: isDragging, isHovered: isHovered),
               ),
-              const SizedBox(height: 6),
+                const SizedBox(height: AppConstants.reorderLabelGap),
               Text(
                 '${index + 1}',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: AppConstants.reorderLabelFontSize,
                   color: Colors.grey[700],
                   fontWeight: FontWeight.w500,
                 ),
@@ -163,20 +164,20 @@ class _ReorderPageState extends State<ReorderPage> {
     bool isFeedback = false,
   }) {
     return Material(
-      elevation: isFeedback ? 8 : (isDragging ? 0 : 2),
-      borderRadius: BorderRadius.circular(6),
+      elevation: isFeedback ? AppConstants.reorderCardElevationFeedback : (isDragging ? 0 : AppConstants.reorderCardElevationNormal),
+      borderRadius: BorderRadius.circular(AppConstants.reorderCardRadius),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        width: isFeedback ? width * 0.9 : width,
-        height: isFeedback ? height * 0.9 : height,
+        duration: const Duration(milliseconds: AppConstants.reorderAnimDurationMs),
+        width: isFeedback ? width * AppConstants.reorderCardFeedbackScale : width,
+        height: isFeedback ? height * AppConstants.reorderCardFeedbackScale : height,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(AppConstants.reorderCardRadius),
           border: isHovered
-              ? Border.all(color: Colors.blue, width: 2.5)
+              ? Border.all(color: Colors.blue, width: AppConstants.reorderCardBorderWidth)
               : null,
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(AppConstants.reorderCardRadius),
           child: Opacity(
             opacity: isDragging ? 0.0 : 1.0,
             child: Image.file(
@@ -197,8 +198,8 @@ class _ReorderPageState extends State<ReorderPage> {
       height: height,
       decoration: BoxDecoration(
         color: Colors.grey[300],
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.blue.withValues(alpha: 0.4), width: 2),
+        borderRadius: BorderRadius.circular(AppConstants.reorderCardRadius),
+        border: Border.all(color: Colors.blue.withValues(alpha: AppConstants.reorderCardBorderAlpha), width: 2),
       ),
     );
   }
