@@ -1,5 +1,6 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'package:smart_pdf/l10n/app_localizations.dart';
 import 'widgets/app_drawer.dart';
 import 'widgets/camera_capture_page.dart';
@@ -46,6 +47,40 @@ class _AppShellState extends State<AppShell> {
     super.initState();
     _notifier = DocsNotifier(widget.db);
     _notifier.reload();
+    _initSharingIntent();
+  }
+
+  void _initSharingIntent() {
+    // App opened via "Open with" while cold-started
+    ReceiveSharingIntent.instance.getInitialMedia().then(_handleSharedFiles);
+    // App brought to foreground via "Open with" / share
+    ReceiveSharingIntent.instance.getMediaStream().listen(_handleSharedFiles);
+  }
+
+  void _handleSharedFiles(List<SharedMediaFile> files) {
+    if (files.isEmpty) return;
+    final pdfFile = files.firstWhere(
+      (f) => f.path.toLowerCase().endsWith('.pdf'),
+      orElse: () => SharedMediaFile(
+        path: '',
+        mimeType: null,
+        thumbnail: null,
+        type: SharedMediaType.file,
+      ),
+    );
+    if (pdfFile.path.isEmpty) return;
+    ReceiveSharingIntent.instance.reset();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ViewerPage(
+            pdfPath: pdfFile.path,
+            title: pdfFile.path.split('/').last,
+          ),
+        ),
+      );
+    });
   }
 
   @override
