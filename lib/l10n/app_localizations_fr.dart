@@ -69,6 +69,17 @@ class AppLocalizationsFr extends AppLocalizations {
   String get viewerTitle => 'Visionneuse';
 
   @override
+  String get viewerSearchHint => 'Rechercher dans le document…';
+
+  @override
+  String get viewerSearchNoResults => 'Aucun résultat';
+
+  @override
+  String viewerSearchOf(int current, int total) {
+    return '$current sur $total';
+  }
+
+  @override
   String get drawerSettings => 'Paramètres';
 
   @override

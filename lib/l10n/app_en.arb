@@ -25,6 +25,15 @@
   "favouritesEmptySubtitle": "Star a document to see it here",
 
   "viewerTitle": "Viewer",
+  "viewerSearchHint": "Search in document…",
+  "viewerSearchNoResults": "No results",
+  "viewerSearchOf": "{current} of {total}",
+  "@viewerSearchOf": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
 
   "drawerSettings": "Settings",
   "drawerTheme": "Theme",

@@ -161,6 +161,10 @@ class AppConstants {
   // Viewer page
   static const double viewerPdfPadding = 4.0;
   static const double viewerShareFallbackSize = 100.0;
+  static const double viewerSearchBarElevation = 0.0;
+  static const double viewerSearchCountFontSize = 12.0;
+  static const double viewerSearchActionIconSize = 20.0;
+  static const double viewerSearchActionPaddingH = 4.0;
   // Feedback sheet
   static const double feedbackHandleWidth = 40.0;
   static const double feedbackHandleHeight = 4.0;

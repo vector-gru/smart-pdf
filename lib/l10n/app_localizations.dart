@@ -212,6 +212,24 @@ abstract class AppLocalizations {
   /// **'Viewer'**
   String get viewerTitle;
 
+  /// No description provided for @viewerSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search in document…'**
+  String get viewerSearchHint;
+
+  /// No description provided for @viewerSearchNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No results'**
+  String get viewerSearchNoResults;
+
+  /// No description provided for @viewerSearchOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{current} of {total}'**
+  String viewerSearchOf(int current, int total);
+
   /// No description provided for @drawerSettings.
   ///
   /// In en, this message translates to:

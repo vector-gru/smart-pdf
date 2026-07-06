@@ -25,6 +25,15 @@
   "favouritesEmptySubtitle": "Marquez un document d'une étoile pour le retrouver ici",
 
   "viewerTitle": "Visionneuse",
+  "viewerSearchHint": "Rechercher dans le document…",
+  "viewerSearchNoResults": "Aucun résultat",
+  "viewerSearchOf": "{current} sur {total}",
+  "@viewerSearchOf": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
 
   "drawerSettings": "Paramètres",
   "drawerTheme": "Thème",

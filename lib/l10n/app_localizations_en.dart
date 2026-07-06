@@ -67,6 +67,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get viewerTitle => 'Viewer';
 
   @override
+  String get viewerSearchHint => 'Search in document…';
+
+  @override
+  String get viewerSearchNoResults => 'No results';
+
+  @override
+  String viewerSearchOf(int current, int total) {
+    return '$current of $total';
+  }
+
+  @override
   String get drawerSettings => 'Settings';
 
   @override
