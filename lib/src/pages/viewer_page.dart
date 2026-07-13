@@ -1,4 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:pdfrx/pdfrx.dart' as pdfrx;
 import 'package:share_plus/share_plus.dart';
 import 'package:smart_pdf/l10n/app_localizations.dart';
@@ -32,8 +36,31 @@ class _ViewerPageState extends State<ViewerPage> {
   }
 
   Future<void> _resolveAndLoad() async {
-    final path = await resolveDocPath(widget.pdfPath);
+    final raw = widget.pdfPath;
+    String path;
+    if (raw.startsWith('content://')) {
+      path = await _copyContentUriToTemp(raw);
+    } else {
+      path = await resolveDocPath(raw);
+    }
     if (mounted) setState(() => _resolvedPath = path);
+  }
+
+  /// Copies a content:// URI to a temp file so pdfrx can open it as a regular file.
+  Future<String> _copyContentUriToTemp(String contentUri) async {
+    const channel = MethodChannel('smart_pdf/content_resolver');
+    final bytes = await channel.invokeMethod<Uint8List>('readContentUri', {
+      'uri': contentUri,
+    });
+    if (bytes == null || bytes.isEmpty)
+      throw Exception('Failed to read content URI');
+    final tmp = await getTemporaryDirectory();
+    final dest = p.join(
+      tmp.path,
+      'shared_${DateTime.now().millisecondsSinceEpoch}.pdf',
+    );
+    await File(dest).writeAsBytes(bytes);
+    return dest;
   }
 
   void _onViewerReady(pdfrx.PdfDocument doc, pdfrx.PdfViewerController ctrl) {

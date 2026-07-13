@@ -60,7 +60,9 @@ class _AppShellState extends State<AppShell> {
   void _handleSharedFiles(List<SharedMediaFile> files) {
     if (files.isEmpty) return;
     final pdfFile = files.firstWhere(
-      (f) => f.path.toLowerCase().endsWith('.pdf'),
+      (f) =>
+          f.path.toLowerCase().endsWith('.pdf') ||
+          (f.mimeType?.toLowerCase() == 'application/pdf'),
       orElse: () => SharedMediaFile(
         path: '',
         mimeType: null,
@@ -72,12 +74,15 @@ class _AppShellState extends State<AppShell> {
     ReceiveSharingIntent.instance.reset();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      final rawPath = pdfFile.path;
+      // Derive a display title: use last path segment, strip query params
+      final segment = rawPath.split('/').last.split('?').first;
+      final title = segment.toLowerCase().endsWith('.pdf')
+          ? segment
+          : (pdfFile.mimeType != null ? segment : rawPath.split('/').last);
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => ViewerPage(
-            pdfPath: pdfFile.path,
-            title: pdfFile.path.split('/').last,
-          ),
+          builder: (_) => ViewerPage(pdfPath: rawPath, title: title),
         ),
       );
     });
