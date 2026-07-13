@@ -51,9 +51,8 @@ class _AppShellState extends State<AppShell> {
   }
 
   void _initSharingIntent() {
-    // App opened via "Open with" while cold-started
-    ReceiveSharingIntent.instance.getInitialMedia().then(_handleSharedFiles);
-    // App brought to foreground via "Open with" / share
+    // Only handle warm-start shares (app already running).
+    // Cold-start initial media is handled in main.dart.
     ReceiveSharingIntent.instance.getMediaStream().listen(_handleSharedFiles);
   }
 

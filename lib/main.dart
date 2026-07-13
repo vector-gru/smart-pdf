@@ -1,24 +1,62 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'package:smart_pdf/l10n/app_localizations.dart';
 import 'src/constants/app_colors.dart';
 import 'src/db/app_db.dart';
 import 'src/l10n/locale_provider.dart';
-import 'src/theme/theme_provider.dart';
+import 'src/pages/viewer_page.dart';
 import 'src/settings/settings_provider.dart';
+import 'src/theme/theme_provider.dart';
 import 'src/app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final db = AppDatabase();
   final settingsProvider = await SettingsProvider.load();
-  runApp(MyApp(db: db, settingsProvider: settingsProvider));
+
+  // Check if app was cold-started by an external "Open with" intent.
+  final initialFiles = await ReceiveSharingIntent.instance.getInitialMedia();
+  final initialPdf = initialFiles.firstWhere(
+    (f) =>
+        f.path.toLowerCase().endsWith('.pdf') ||
+        f.mimeType?.toLowerCase() == 'application/pdf',
+    orElse: () => SharedMediaFile(
+      path: '',
+      mimeType: null,
+      thumbnail: null,
+      type: SharedMediaType.file,
+    ),
+  );
+  // Reset so AppShell doesn't process it again.
+  if (initialPdf.path.isNotEmpty) {
+    ReceiveSharingIntent.instance.reset();
+  }
+
+  runApp(
+    MyApp(
+      db: db,
+      settingsProvider: settingsProvider,
+      externalPdfPath: initialPdf.path.isNotEmpty ? initialPdf.path : null,
+      externalPdfTitle: initialPdf.path.isNotEmpty
+          ? initialPdf.path.split('/').last.split('?').first
+          : null,
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {
   final AppDatabase db;
   final SettingsProvider settingsProvider;
-  const MyApp({super.key, required this.db, required this.settingsProvider});
+  final String? externalPdfPath;
+  final String? externalPdfTitle;
+  const MyApp({
+    super.key,
+    required this.db,
+    required this.settingsProvider,
+    this.externalPdfPath,
+    this.externalPdfTitle,
+  });
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -71,12 +109,18 @@ class _MyAppState extends State<MyApp> {
         colorSchemeSeed: AppColors.primary,
         brightness: Brightness.dark,
       ),
-      home: AppShell(
-        db: widget.db,
-        localeProvider: _localeProvider,
-        themeProvider: _themeProvider,
-        settingsProvider: widget.settingsProvider,
-      ),
+      home: widget.externalPdfPath != null
+          ? ViewerPage(
+              pdfPath: widget.externalPdfPath!,
+              title: widget.externalPdfTitle,
+              isExternal: true,
+            )
+          : AppShell(
+              db: widget.db,
+              localeProvider: _localeProvider,
+              themeProvider: _themeProvider,
+              settingsProvider: widget.settingsProvider,
+            ),
       debugShowCheckedModeBanner: false,
     );
   }

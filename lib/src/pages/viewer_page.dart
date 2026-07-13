@@ -13,26 +13,73 @@ import '../db/app_db.dart';
 class ViewerPage extends StatefulWidget {
   final String pdfPath;
   final String? title;
-  const ViewerPage({Key? key, required this.pdfPath, this.title})
-    : super(key: key);
+  final bool isExternal;
+  const ViewerPage({
+    Key? key,
+    required this.pdfPath,
+    this.title,
+    this.isExternal = false,
+  }) : super(key: key);
 
   @override
   State<ViewerPage> createState() => _ViewerPageState();
 }
 
-class _ViewerPageState extends State<ViewerPage> {
+class _ViewerPageState extends State<ViewerPage> with WidgetsBindingObserver {
   final _controller = pdfrx.PdfViewerController();
   pdfrx.PdfTextSearcher? _searcher;
   final _shareKey = GlobalKey();
   final _searchController = TextEditingController();
   final _searchFocus = FocusNode();
   bool _searchVisible = false;
+  bool _chromeVisible = true;
   String? _resolvedPath;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _resolveAndLoad();
+    SystemChrome.setSystemUIChangeCallback(_onSystemUIChange);
+  }
+
+  /// Called by the OS when system bars are shown/hidden (e.g. immersiveSticky
+  /// edge-swipe). If we're supposed to be hidden, re-hide after the brief peek.
+  Future<void> _onSystemUIChange(bool systemOverlaysAreVisible) async {
+    if (!_chromeVisible && systemOverlaysAreVisible) {
+      await Future.delayed(const Duration(milliseconds: 800));
+      if (mounted && !_chromeVisible) {
+        SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+      }
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _applySystemUI();
+  }
+
+  void _applySystemUI() {
+    if (_chromeVisible) {
+      SystemChrome.setEnabledSystemUIMode(
+        SystemUiMode.manual,
+        overlays: SystemUiOverlay.values,
+      );
+    } else {
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    }
+  }
+
+  void _toggleChrome() {
+    if (_searchVisible) return;
+    setState(() => _chromeVisible = !_chromeVisible);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _applySystemUI());
+  }
+
+  void _showChrome() {
+    if (_chromeVisible) return;
+    setState(() => _chromeVisible = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _applySystemUI());
   }
 
   Future<void> _resolveAndLoad() async {
@@ -75,6 +122,7 @@ class _ViewerPageState extends State<ViewerPage> {
     setState(() {
       _searchVisible = !_searchVisible;
       if (_searchVisible) {
+        _showChrome();
         _searchFocus.requestFocus();
       } else {
         _searchController.clear();
@@ -110,6 +158,12 @@ class _ViewerPageState extends State<ViewerPage> {
 
   @override
   void dispose() {
+    SystemChrome.setSystemUIChangeCallback(null);
+    WidgetsBinding.instance.removeObserver(this);
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual,
+      overlays: SystemUiOverlay.values,
+    );
     _searcher?.removeListener(_onSearchChanged);
     _searcher?.dispose();
     _searchController.dispose();
@@ -127,109 +181,121 @@ class _ViewerPageState extends State<ViewerPage> {
     final hasText = _searchController.text.isNotEmpty;
 
     return Scaffold(
-      appBar: AppBar(
-        titleSpacing: 0,
-        title: _searchVisible
-            ? Row(
-                children: [
-                  Expanded(
-                    child: _SearchBar(
-                      controller: _searchController,
-                      focusNode: _searchFocus,
-                      hint: l10n.viewerSearchHint,
-                      onChanged: (q) => searcher?.startTextSearch(q),
-                    ),
-                  ),
-                  if (hasText)
-                    _CompactIconButton(
-                      icon: Icons.close,
-                      onPressed: _clearSearch,
-                    ),
-                  if (hasMatches) ...[
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppConstants.viewerSearchActionPaddingH,
-                      ),
-                      child: Text(
-                        l10n.viewerSearchOf((currentIdx ?? 0) + 1, total),
-                        style: const TextStyle(
-                          fontSize: AppConstants.viewerSearchCountFontSize,
+      extendBodyBehindAppBar: true,
+      appBar: _chromeVisible
+          ? AppBar(
+              titleSpacing: 0,
+              leading: widget.isExternal
+                  ? IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: SystemNavigator.pop,
+                    )
+                  : null,
+              title: _searchVisible
+                  ? Row(
+                      children: [
+                        Expanded(
+                          child: _SearchBar(
+                            controller: _searchController,
+                            focusNode: _searchFocus,
+                            hint: l10n.viewerSearchHint,
+                            onChanged: (q) => searcher?.startTextSearch(q),
+                          ),
                         ),
+                        if (hasText)
+                          _CompactIconButton(
+                            icon: Icons.close,
+                            onPressed: _clearSearch,
+                          ),
+                        if (hasMatches) ...[
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal:
+                                  AppConstants.viewerSearchActionPaddingH,
+                            ),
+                            child: Text(
+                              l10n.viewerSearchOf((currentIdx ?? 0) + 1, total),
+                              style: const TextStyle(
+                                fontSize:
+                                    AppConstants.viewerSearchCountFontSize,
+                              ),
+                            ),
+                          ),
+                          _CompactIconButton(
+                            icon: Icons.keyboard_arrow_up,
+                            onPressed: () => searcher.goToPrevMatch(),
+                            tooltip: 'Previous',
+                          ),
+                          _CompactIconButton(
+                            icon: Icons.keyboard_arrow_down,
+                            onPressed: () => searcher.goToNextMatch(),
+                            tooltip: 'Next',
+                          ),
+                        ],
+                        if (searcher?.isSearching ?? false)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal:
+                                  AppConstants.viewerSearchActionPaddingH,
+                            ),
+                            child: SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                        _CompactIconButton(
+                          icon: Icons.search_off,
+                          onPressed: _toggleSearch,
+                          tooltip: 'Close search',
+                        ),
+                        IconButton(
+                          key: _shareKey,
+                          icon: const Icon(
+                            Icons.share,
+                            size: AppConstants.viewerSearchActionIconSize,
+                          ),
+                          onPressed: _share,
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                        ),
+                      ],
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(l10n.viewerTitle),
+                        if (widget.title != null)
+                          Text(
+                            widget.title!,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                      ],
+                    ),
+              actions: _searchVisible
+                  ? null
+                  : [
+                      _CompactIconButton(
+                        icon: Icons.search,
+                        onPressed: _toggleSearch,
+                        tooltip: 'Search',
                       ),
-                    ),
-                    _CompactIconButton(
-                      icon: Icons.keyboard_arrow_up,
-                      onPressed: () => searcher.goToPrevMatch(),
-                      tooltip: 'Previous',
-                    ),
-                    _CompactIconButton(
-                      icon: Icons.keyboard_arrow_down,
-                      onPressed: () => searcher.goToNextMatch(),
-                      tooltip: 'Next',
-                    ),
-                  ],
-                  if (searcher?.isSearching ?? false)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppConstants.viewerSearchActionPaddingH,
+                      IconButton(
+                        key: _shareKey,
+                        icon: const Icon(
+                          Icons.share,
+                          size: AppConstants.viewerSearchActionIconSize,
+                        ),
+                        onPressed: _share,
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
                       ),
-                      child: SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    ),
-                  _CompactIconButton(
-                    icon: Icons.search_off,
-                    onPressed: _toggleSearch,
-                    tooltip: 'Close search',
-                  ),
-                  IconButton(
-                    key: _shareKey,
-                    icon: const Icon(
-                      Icons.share,
-                      size: AppConstants.viewerSearchActionIconSize,
-                    ),
-                    onPressed: _share,
-                    visualDensity: VisualDensity.compact,
-                    padding: EdgeInsets.zero,
-                  ),
-                ],
-              )
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(l10n.viewerTitle),
-                  if (widget.title != null)
-                    Text(
-                      widget.title!,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                ],
-              ),
-        actions: _searchVisible
-            ? null
-            : [
-                _CompactIconButton(
-                  icon: Icons.search,
-                  onPressed: _toggleSearch,
-                  tooltip: 'Search',
-                ),
-                IconButton(
-                  key: _shareKey,
-                  icon: const Icon(
-                    Icons.share,
-                    size: AppConstants.viewerSearchActionIconSize,
-                  ),
-                  onPressed: _share,
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                ),
-              ],
-      ),
+                    ],
+            )
+          : null,
       body: _resolvedPath == null
           ? const Center(child: CircularProgressIndicator())
           : pdfrx.PdfViewer.file(
@@ -241,6 +307,16 @@ class _ViewerPageState extends State<ViewerPage> {
                 matchTextColor: Colors.yellow.withAlpha(160),
                 activeMatchTextColor: Colors.orange.withAlpha(200),
                 onViewerReady: _onViewerReady,
+                viewerOverlayBuilder: (context, size, handleLinkTap) => [
+                  GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onTap: () {
+                      handleLinkTap(Offset(size.width / 2, size.height / 2));
+                      _toggleChrome();
+                    },
+                    child: SizedBox(width: size.width, height: size.height),
+                  ),
+                ],
                 pagePaintCallbacks: [
                   if (searcher != null) searcher.pageTextMatchPaintCallback,
                 ],
