@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:pdfrx/pdfrx.dart' as pdfrx;
+import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:smart_pdf/l10n/app_localizations.dart';
 import '../constants/app_constants.dart';
@@ -156,6 +157,15 @@ class _ViewerPageState extends State<ViewerPage> with WidgetsBindingObserver {
     );
   }
 
+  Future<void> _print() async {
+    final path = _resolvedPath;
+    if (path == null) return;
+    await Printing.layoutPdf(
+      name: widget.title ?? p.basename(path),
+      onLayout: (_) => File(path).readAsBytes(),
+    );
+  }
+
   @override
   void dispose() {
     SystemChrome.setSystemUIChangeCallback(null);
@@ -259,6 +269,27 @@ class _ViewerPageState extends State<ViewerPage> with WidgetsBindingObserver {
                           visualDensity: VisualDensity.compact,
                           padding: EdgeInsets.zero,
                         ),
+                        PopupMenuButton<String>(
+                          icon: const Icon(
+                            Icons.more_vert,
+                            size: AppConstants.viewerSearchActionIconSize,
+                          ),
+                          onSelected: (value) {
+                            if (value == 'print') _print();
+                          },
+                          itemBuilder: (_) => const [
+                            PopupMenuItem(
+                              value: 'print',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.print),
+                                  SizedBox(width: 8),
+                                  Text('Print'),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     )
                   : Column(
@@ -292,6 +323,27 @@ class _ViewerPageState extends State<ViewerPage> with WidgetsBindingObserver {
                         onPressed: _share,
                         visualDensity: VisualDensity.compact,
                         padding: EdgeInsets.zero,
+                      ),
+                      PopupMenuButton<String>(
+                        icon: const Icon(
+                          Icons.more_vert,
+                          size: AppConstants.viewerSearchActionIconSize,
+                        ),
+                        onSelected: (value) {
+                          if (value == 'print') _print();
+                        },
+                        itemBuilder: (_) => const [
+                          PopupMenuItem(
+                            value: 'print',
+                            child: Row(
+                              children: [
+                                Icon(Icons.print),
+                                SizedBox(width: 8),
+                                Text('Print'),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ],
             )
