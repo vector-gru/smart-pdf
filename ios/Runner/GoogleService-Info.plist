@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  REPLACE THIS FILE with the real GoogleService-Info.plist downloaded from:
+  https://console.cloud.google.com → Your Project → iOS app (bundle ID: com.hifivetech.smartpdf or as registered)
+
+  Steps:
+  1) Create an OAuth 2.0 Client ID (iOS) for bundle ID com.hifivetech.smartpdf
+  2) Download GoogleService-Info.plist and replace this file
+  3) In Info.plist → CFBundleURLSchemes → replace REPLACE_WITH_YOUR_REVERSED_CLIENT_ID
+     with the REVERSED_CLIENT_ID value from this file (looks like: com.googleusercontent.apps.XXXXXX-YYYYYYY)
+-->
+<plist version="1.0">
+<dict>
+  <key>CLIENT_ID</key>
+  <string>REPLACE.apps.googleusercontent.com</string>
+  <key>REVERSED_CLIENT_ID</key>
+  <string>REPLACE_WITH_YOUR_REVERSED_CLIENT_ID</string>
+  <key>BUNDLE_ID</key>
+  <string>com.hifivetech.smartpdf</string>
+  <key>PROJECT_ID</key>
+  <string>REPLACE</string>
+  <key>GOOGLE_APP_ID</key>
+  <string>REPLACE</string>
+  <key>IS_ADS_ENABLED</key>
+  <false/>
+  <key>IS_ANALYTICS_ENABLED</key>
+  <false/>
+  <key>IS_APPINVITE_ENABLED</key>
+  <true/>
+  <key>IS_GCM_ENABLED</key>
+  <false/>
+  <key>IS_SIGNIN_ENABLED</key>
+  <true/>
+</dict>
+</plist>

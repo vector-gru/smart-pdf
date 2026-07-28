@@ -170,6 +170,90 @@ abstract class AppLocalizations {
   /// **'No files yet'**
   String get filesEmpty;
 
+  /// No description provided for @driveSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Drive'**
+  String get driveSheetTitle;
+
+  /// No description provided for @driveSheetSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select PDF files to import into SmartPDF'**
+  String get driveSheetSubtitle;
+
+  /// No description provided for @driveSigningIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Signing in…'**
+  String get driveSigningIn;
+
+  /// No description provided for @driveLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading files…'**
+  String get driveLoading;
+
+  /// No description provided for @driveEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No PDF files found in your Drive.'**
+  String get driveEmpty;
+
+  /// No description provided for @driveImporting.
+  ///
+  /// In en, this message translates to:
+  /// **'Importing {current} of {total}…'**
+  String driveImporting(int current, int total);
+
+  /// No description provided for @driveImportDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 file imported} other{{count} files imported}}'**
+  String driveImportDone(int count);
+
+  /// No description provided for @driveImportButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Import selected'**
+  String get driveImportButton;
+
+  /// No description provided for @driveErrorSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not sign in to Google. Please try again.'**
+  String get driveErrorSignIn;
+
+  /// No description provided for @driveErrorLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load Drive files. Please try again.'**
+  String get driveErrorLoad;
+
+  /// No description provided for @driveErrorImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Some files could not be imported.'**
+  String get driveErrorImport;
+
+  /// No description provided for @driveSelectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all'**
+  String get driveSelectAll;
+
+  /// No description provided for @driveDeselectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Deselect all'**
+  String get driveDeselectAll;
+
+  /// No description provided for @driveSignOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get driveSignOut;
+
   /// No description provided for @filesEmptySubtitle.
   ///
   /// In en, this message translates to:

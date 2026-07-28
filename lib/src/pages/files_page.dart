@@ -7,12 +7,14 @@ import '../db/app_db.dart';
 import '../db/docs_notifier.dart';
 import '../widgets/document_card.dart';
 import 'doc_actions.dart';
+import 'drive_sync_sheet.dart';
 import 'viewer_page.dart';
 
 class FilesPage extends StatefulWidget {
   final AppDatabase db;
   final DocsNotifier notifier;
-  const FilesPage({Key? key, required this.db, required this.notifier}) : super(key: key);
+  const FilesPage({Key? key, required this.db, required this.notifier})
+    : super(key: key);
 
   @override
   State<FilesPage> createState() => _FilesPageState();
@@ -58,26 +60,50 @@ class _FilesPageState extends State<FilesPage> with DocActionsMixin {
             ? TextField(
                 controller: _searchController,
                 autofocus: true,
-                decoration: InputDecoration(hintText: l10n.homeSearchHint, border: InputBorder.none),
+                decoration: InputDecoration(
+                  hintText: l10n.homeSearchHint,
+                  border: InputBorder.none,
+                ),
                 onChanged: (v) => setState(() => _searchQuery = v),
               )
-            : Text(l10n.filesTitle, style: const TextStyle(fontWeight: FontWeight.w600)),
+            : Text(
+                l10n.filesTitle,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
         actions: [
-          IconButton(icon: const Icon(Icons.emoji_events, color: AppColors.crown), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.emoji_events, color: AppColors.crown),
+            onPressed: () {},
+          ),
           IconButton(
             icon: Icon(_searchActive ? Icons.close : Icons.search),
             onPressed: () => setState(() {
               _searchActive = !_searchActive;
-              if (!_searchActive) { _searchQuery = ''; _searchController.clear(); }
+              if (!_searchActive) {
+                _searchQuery = '';
+                _searchController.clear();
+              }
             }),
           ),
         ],
       ),
       body: Column(
         children: [
-          _buildMenuRow(Icons.folder_outlined, l10n.filesBrowseMore, _browseMoreFiles),
+          _buildMenuRow(
+            Icons.folder_outlined,
+            l10n.filesBrowseMore,
+            _browseMoreFiles,
+          ),
           const Divider(height: 1),
-          _buildMenuRow(Icons.add_to_drive_outlined, l10n.filesSyncDrive, () {}),
+          _buildMenuRow(
+            Icons.add_to_drive_outlined,
+            l10n.filesSyncDrive,
+            () => showDriveSyncSheet(
+              context,
+              db: widget.db,
+              notifier: widget.notifier,
+            ),
+          ),
           const Divider(height: 1),
           Expanded(
             child: ListenableBuilder(
@@ -85,19 +111,40 @@ class _FilesPageState extends State<FilesPage> with DocActionsMixin {
               builder: (context, _) {
                 final allDocs = widget.notifier.all;
                 final docs = (allDocs.where((d) => d.isImported).toList())
-                    .where((d) => _searchQuery.isEmpty || d.title.toLowerCase().contains(_searchQuery.toLowerCase()))
+                    .where(
+                      (d) =>
+                          _searchQuery.isEmpty ||
+                          d.title.toLowerCase().contains(
+                            _searchQuery.toLowerCase(),
+                          ),
+                    )
                     .toList();
                 if (docs.isEmpty) {
                   return Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.inbox_outlined, size: 80, color: Colors.blue[100]),
+                        Icon(
+                          Icons.inbox_outlined,
+                          size: 80,
+                          color: Colors.blue[100],
+                        ),
                         const SizedBox(height: 16),
-                        Text(l10n.filesEmpty, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                        Text(
+                          l10n.filesEmpty,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                         const SizedBox(height: 8),
-                        Text(l10n.filesEmptySubtitle,
-                            textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textSecondary)),
+                        Text(
+                          l10n.filesEmptySubtitle,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                       ],
                     ),
                   );
@@ -112,7 +159,12 @@ class _FilesPageState extends State<FilesPage> with DocActionsMixin {
                     final d = docs[index];
                     return DocumentCard(
                       document: d,
-                      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ViewerPage(pdfPath: d.filePath, title: d.title))),
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              ViewerPage(pdfPath: d.filePath, title: d.title),
+                        ),
+                      ),
                       onShare: (rect) => shareDoc(d, rect),
                       onDelete: () => deleteDoc(d),
                       onEdit: null,

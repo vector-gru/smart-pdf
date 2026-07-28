@@ -1,0 +1,43 @@
+{
+  "_README": "REPLACE THIS FILE with the real google-services.json downloaded from",
+  "_README2": "https://console.cloud.google.com → Your Project → Android app (com.hifivetech.smartpdf)",
+  "_README3": "Steps: 1) Create OAuth 2.0 Client ID (Android) with your SHA-1 fingerprint",
+  "_README4": "       2) Download google-services.json and replace this file",
+  "_README5": "       3) Uncomment the google-services plugin lines in android/app/build.gradle.kts and android/settings.gradle.kts",
+  "project_info": {
+    "project_number": "REPLACE",
+    "project_id": "REPLACE",
+    "storage_bucket": "REPLACE"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "REPLACE",
+        "android_client_info": {
+          "package_name": "com.hifivetech.smartpdf"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "REPLACE.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.hifivetech.smartpdf",
+            "certificate_hash": "REPLACE_WITH_SHA1"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "REPLACE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

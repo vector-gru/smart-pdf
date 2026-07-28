@@ -15,6 +15,32 @@
   "filesBrowseMore": "Browse more files",
   "filesSyncDrive": "Sync with Google Drive",
   "filesEmpty": "No files yet",
+
+  "driveSheetTitle": "Google Drive",
+  "driveSheetSubtitle": "Select PDF files to import into SmartPDF",
+  "driveSigningIn": "Signing in…",
+  "driveLoading": "Loading files…",
+  "driveEmpty": "No PDF files found in your Drive.",
+  "driveImporting": "Importing {current} of {total}…",
+  "@driveImporting": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "driveImportDone": "{count, plural, =1{1 file imported} other{{count} files imported}}",
+  "@driveImportDone": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "driveImportButton": "Import selected",
+  "driveErrorSignIn": "Could not sign in to Google. Please try again.",
+  "driveErrorLoad": "Failed to load Drive files. Please try again.",
+  "driveErrorImport": "Some files could not be imported.",
+  "driveSelectAll": "Select all",
+  "driveDeselectAll": "Deselect all",
+  "driveSignOut": "Sign out",
   "filesEmptySubtitle": "Start adding PDF files to build your digital library!",
 
   "recentTitle": "Recent",

@@ -76,6 +76,20 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+	<!-- Google Sign-In: Replace REPLACE_WITH_YOUR_REVERSED_CLIENT_ID with the value from
+	     your GoogleService-Info.plist REVERSED_CLIENT_ID field.
+	     e.g. com.googleusercontent.apps.123456789-abcdef -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>REPLACE_WITH_YOUR_REVERSED_CLIENT_ID</string>
+			</array>
+		</dict>
+	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

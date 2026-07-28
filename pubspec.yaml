@@ -2,7 +2,7 @@ name: smart_pdf
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
@@ -56,6 +56,10 @@ dependencies:
   pdfrx: ^2.4.4
   drift: ^2.7.0
   sqlite3_flutter_libs: ^0.5.5
+  google_sign_in: ^6.2.2
+  googleapis: ^13.2.0
+  extension_google_sign_in_as_googleapis_auth: ^2.0.12
+  http: ^1.2.2
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

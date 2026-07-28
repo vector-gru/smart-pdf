@@ -45,6 +45,59 @@ class AppLocalizationsEn extends AppLocalizations {
   String get filesEmpty => 'No files yet';
 
   @override
+  String get driveSheetTitle => 'Google Drive';
+
+  @override
+  String get driveSheetSubtitle => 'Select PDF files to import into SmartPDF';
+
+  @override
+  String get driveSigningIn => 'Signing in…';
+
+  @override
+  String get driveLoading => 'Loading files…';
+
+  @override
+  String get driveEmpty => 'No PDF files found in your Drive.';
+
+  @override
+  String driveImporting(int current, int total) {
+    return 'Importing $current of $total…';
+  }
+
+  @override
+  String driveImportDone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count files imported',
+      one: '1 file imported',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get driveImportButton => 'Import selected';
+
+  @override
+  String get driveErrorSignIn =>
+      'Could not sign in to Google. Please try again.';
+
+  @override
+  String get driveErrorLoad => 'Failed to load Drive files. Please try again.';
+
+  @override
+  String get driveErrorImport => 'Some files could not be imported.';
+
+  @override
+  String get driveSelectAll => 'Select all';
+
+  @override
+  String get driveDeselectAll => 'Deselect all';
+
+  @override
+  String get driveSignOut => 'Sign out';
+
+  @override
   String get filesEmptySubtitle =>
       'Start adding PDF files to build your digital library!';
 
