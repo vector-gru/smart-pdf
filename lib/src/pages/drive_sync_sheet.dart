@@ -88,7 +88,7 @@ class _DriveSyncSheetState extends State<DriveSyncSheet>
     return DraggableScrollableSheet(
       expand: false,
       initialChildSize: 0.80,
-      minChildSize: 0.4,
+      minChildSize: 0.55,
       maxChildSize: 0.95,
       builder: (_, sc) => Column(
         children: [
@@ -346,75 +346,79 @@ class _DownloadTabState extends State<_DownloadTab>
         final allChecked =
             selectable.isNotEmpty &&
             selectable.every((f) => _selected.contains(f.id));
-        return Column(
-          children: [
-            _SearchBar(
-              controller: _searchController,
-              hint: l10n.homeSearchHint,
-              onChanged: (v) => setState(() => _query = v),
-            ),
-            Expanded(
-              child: visible.isEmpty
-                  ? Center(
-                      child: Text(
-                        l10n.viewerSearchNoResults,
-                        style: const TextStyle(color: AppColors.textSecondary),
-                      ),
-                    )
-                  : ListView.builder(
-                      controller: widget.scrollController,
-                      itemCount: visible.length,
-                      itemBuilder: (_, i) {
-                        final file = visible[i];
-                        final local = _isLocal(file);
-                        return CheckboxListTile(
-                          value: local ? false : _selected.contains(file.id),
-                          onChanged: local ? null : (_) => _toggle(file),
-                          title: Text(
-                            file.name,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: local ? AppColors.textSecondary : null,
-                            ),
+        return ClipRect(
+          child: Column(
+            children: [
+              _SearchBar(
+                controller: _searchController,
+                hint: l10n.homeSearchHint,
+                onChanged: (v) => setState(() => _query = v),
+              ),
+              Expanded(
+                child: visible.isEmpty
+                    ? Center(
+                        child: Text(
+                          l10n.viewerSearchNoResults,
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
                           ),
-                          subtitle: file.size != null
-                              ? Text(
-                                  _fmt(file.size!),
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: AppColors.textSecondary,
+                        ),
+                      )
+                    : ListView.builder(
+                        controller: widget.scrollController,
+                        itemCount: visible.length,
+                        itemBuilder: (_, i) {
+                          final file = visible[i];
+                          final local = _isLocal(file);
+                          return CheckboxListTile(
+                            value: local ? false : _selected.contains(file.id),
+                            onChanged: local ? null : (_) => _toggle(file),
+                            title: Text(
+                              file.name,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: local ? AppColors.textSecondary : null,
+                              ),
+                            ),
+                            subtitle: file.size != null
+                                ? Text(
+                                    _fmt(file.size!),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  )
+                                : null,
+                            secondary: local
+                                ? _Badge(
+                                    icon: Icons.check_circle_rounded,
+                                    label: 'In app',
+                                    color: Colors.green.shade600,
+                                  )
+                                : const Icon(
+                                    Icons.picture_as_pdf_outlined,
+                                    color: Color(0xFFDB4437),
                                   ),
-                                )
-                              : null,
-                          secondary: local
-                              ? _Badge(
-                                  icon: Icons.check_circle_rounded,
-                                  label: 'In app',
-                                  color: Colors.green.shade600,
-                                )
-                              : const Icon(
-                                  Icons.picture_as_pdf_outlined,
-                                  color: Color(0xFFDB4437),
-                                ),
-                          controlAffinity: ListTileControlAffinity.leading,
-                        );
-                      },
-                    ),
-            ),
-            const Divider(height: 1),
-            _ActionBar(
-              allSelected: allChecked,
-              onToggleAll: _toggleAll,
-              onAction: _selected.isEmpty ? null : _import,
-              actionLabel: _selected.isEmpty
-                  ? l10n.driveImportButton
-                  : '${l10n.driveImportButton} (${_selected.length})',
-              actionIcon: Icons.download_rounded,
-              l10n: l10n,
-            ),
-          ],
-        );
+                            controlAffinity: ListTileControlAffinity.leading,
+                          );
+                        },
+                      ),
+              ),
+              const Divider(height: 1),
+              _ActionBar(
+                allSelected: allChecked,
+                onToggleAll: _toggleAll,
+                onAction: _selected.isEmpty ? null : _import,
+                actionLabel: _selected.isEmpty
+                    ? l10n.driveImportButton
+                    : '${l10n.driveImportButton} (${_selected.length})',
+                actionIcon: Icons.download_rounded,
+                l10n: l10n,
+              ),
+            ],
+          ),
+        ); // ClipRect
     }
   }
 
@@ -630,76 +634,78 @@ class _UploadTabState extends State<_UploadTab>
     final allChecked =
         visible.isNotEmpty && visible.every((d) => _selected.contains(d.id));
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _SearchBar(
-          controller: _searchController,
-          hint: l10n.homeSearchHint,
-          onChanged: (v) => setState(() => _query = v),
-        ),
-        Expanded(
-          child: visible.isEmpty
-              ? Center(
-                  child: Text(
-                    l10n.viewerSearchNoResults,
-                    style: const TextStyle(color: AppColors.textSecondary),
+    return ClipRect(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SearchBar(
+            controller: _searchController,
+            hint: l10n.homeSearchHint,
+            onChanged: (v) => setState(() => _query = v),
+          ),
+          Expanded(
+            child: visible.isEmpty
+                ? Center(
+                    child: Text(
+                      l10n.viewerSearchNoResults,
+                      style: const TextStyle(color: AppColors.textSecondary),
+                    ),
+                  )
+                : ListView.builder(
+                    controller: widget.scrollController,
+                    itemCount: visible.length,
+                    itemBuilder: (_, i) {
+                      final doc = visible[i];
+                      final justDone = _justUploaded.contains(doc.id);
+                      return CheckboxListTile(
+                        value: justDone ? false : _selected.contains(doc.id),
+                        onChanged: justDone ? null : (_) => _toggle(doc),
+                        title: Text(
+                          doc.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: justDone ? AppColors.textSecondary : null,
+                          ),
+                        ),
+                        subtitle: Text(
+                          doc.isImported ? 'Imported' : 'Scanned',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        secondary: justDone
+                            ? _Badge(
+                                icon: Icons.cloud_done_outlined,
+                                label: 'On Drive',
+                                color: const Color(0xFF4285F4),
+                              )
+                            : Icon(
+                                doc.isImported
+                                    ? Icons.picture_as_pdf_outlined
+                                    : Icons.document_scanner_outlined,
+                                color: const Color(0xFF4285F4),
+                              ),
+                        controlAffinity: ListTileControlAffinity.leading,
+                      );
+                    },
                   ),
-                )
-              : ListView.builder(
-                  controller: widget.scrollController,
-                  itemCount: visible.length,
-                  itemBuilder: (_, i) {
-                    final doc = visible[i];
-                    final justDone = _justUploaded.contains(doc.id);
-                    return CheckboxListTile(
-                      value: justDone ? false : _selected.contains(doc.id),
-                      onChanged: justDone ? null : (_) => _toggle(doc),
-                      title: Text(
-                        doc.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: justDone ? AppColors.textSecondary : null,
-                        ),
-                      ),
-                      subtitle: Text(
-                        doc.isImported ? 'Imported' : 'Scanned',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      secondary: justDone
-                          ? _Badge(
-                              icon: Icons.cloud_done_outlined,
-                              label: 'On Drive',
-                              color: const Color(0xFF4285F4),
-                            )
-                          : Icon(
-                              doc.isImported
-                                  ? Icons.picture_as_pdf_outlined
-                                  : Icons.document_scanner_outlined,
-                              color: const Color(0xFF4285F4),
-                            ),
-                      controlAffinity: ListTileControlAffinity.leading,
-                    );
-                  },
-                ),
-        ),
-        const Divider(height: 1),
-        _ActionBar(
-          allSelected: allChecked,
-          onToggleAll: () => _toggleAll(visible),
-          onAction: _selected.isEmpty ? null : () => _upload(pending),
-          actionLabel: _selected.isEmpty
-              ? l10n.driveUploadButton
-              : '${l10n.driveUploadButton} (${_selected.length})',
-          actionIcon: Icons.upload_rounded,
-          l10n: l10n,
-        ),
-      ],
-    );
+          ),
+          const Divider(height: 1),
+          _ActionBar(
+            allSelected: allChecked,
+            onToggleAll: () => _toggleAll(visible),
+            onAction: _selected.isEmpty ? null : () => _upload(pending),
+            actionLabel: _selected.isEmpty
+                ? l10n.driveUploadButton
+                : '${l10n.driveUploadButton} (${_selected.length})',
+            actionIcon: Icons.upload_rounded,
+            l10n: l10n,
+          ),
+        ],
+      ),
+    ); // ClipRect
   }
 }
 
