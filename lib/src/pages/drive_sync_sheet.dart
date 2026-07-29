@@ -24,13 +24,13 @@ Future<void> showDriveSyncSheet(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Shared state enums
+// Shared state
 // ─────────────────────────────────────────────────────────────────────────────
 
-enum _LoadState { signingIn, loading, loaded, busy, error }
+enum _LoadState { signingIn, loading, loaded, busy, done, error }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Root sheet — owns sign-in and TabBar
+// Root sheet
 // ─────────────────────────────────────────────────────────────────────────────
 
 class DriveSyncSheet extends StatefulWidget {
@@ -98,7 +98,7 @@ class _DriveSyncSheetState extends State<DriveSyncSheet>
       maxChildSize: 0.95,
       builder: (_, scrollController) => Column(
         children: [
-          // ── drag handle ──────────────────────────────────────────────────
+          // drag handle
           const SizedBox(height: 12),
           Container(
             width: 40,
@@ -110,7 +110,7 @@ class _DriveSyncSheetState extends State<DriveSyncSheet>
           ),
           const SizedBox(height: 16),
 
-          // ── header ───────────────────────────────────────────────────────
+          // header
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
@@ -140,7 +140,7 @@ class _DriveSyncSheetState extends State<DriveSyncSheet>
           ),
           const SizedBox(height: 8),
 
-          // ── tab bar (only when authenticated) ────────────────────────────
+          // tab bar (only when authenticated)
           if (_authState == _LoadState.loaded) ...[
             TabBar(
               controller: _tabs,
@@ -152,7 +152,7 @@ class _DriveSyncSheetState extends State<DriveSyncSheet>
           ],
           const Divider(height: 1),
 
-          // ── body ─────────────────────────────────────────────────────────
+          // body
           Expanded(child: _buildBody(l10n, scrollController)),
         ],
       ),
@@ -221,10 +221,19 @@ class _DownloadTabState extends State<_DownloadTab>
   int _current = 0;
   int _total = 0;
 
+  final _searchController = TextEditingController();
+  String _query = '';
+
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -293,13 +302,23 @@ class _DownloadTabState extends State<_DownloadTab>
     }
   }
 
-  void _toggleAll() => setState(() {
-    if (_selected.length == _files.length) {
-      _selected.clear();
-    } else {
-      _selected.addAll(_files.map((f) => f.id));
-    }
-  });
+  List<DriveFile> get _filtered => _query.isEmpty
+      ? _files
+      : _files
+            .where((f) => f.name.toLowerCase().contains(_query.toLowerCase()))
+            .toList();
+
+  void _toggleAll() {
+    final visible = _filtered;
+    setState(() {
+      final allChecked = visible.every((f) => _selected.contains(f.id));
+      if (allChecked) {
+        for (final f in visible) _selected.remove(f.id);
+      } else {
+        for (final f in visible) _selected.add(f.id);
+      }
+    });
+  }
 
   void _toggle(DriveFile f) => setState(
     () =>
@@ -315,9 +334,9 @@ class _DownloadTabState extends State<_DownloadTab>
       case _LoadState.loading:
         return _CenteredStatus(text: l10n.driveLoading);
       case _LoadState.busy:
-        return _CenteredStatus(
-          text: l10n.driveImporting(_current, _total),
-          showSpinner: true,
+        return _ProgressView(
+          label: l10n.driveImporting(_current, _total),
+          progress: _total > 0 ? _current / _total : 0,
         );
       case _LoadState.error:
         return _ErrorView(message: _errorMessage, onRetry: _load);
@@ -335,44 +354,63 @@ class _DownloadTabState extends State<_DownloadTab>
             ),
           );
         }
+
+        final visible = _filtered;
+        final allChecked =
+            visible.isNotEmpty &&
+            visible.every((f) => _selected.contains(f.id));
+
         return Column(
           children: [
+            // search bar
+            _SearchBar(
+              controller: _searchController,
+              hint: l10n.homeSearchHint,
+              onChanged: (v) => setState(() => _query = v),
+            ),
+            // list
             Expanded(
-              child: ListView.builder(
-                controller: widget.scrollController,
-                itemCount: _files.length,
-                itemBuilder: (_, i) {
-                  final file = _files[i];
-                  return CheckboxListTile(
-                    value: _selected.contains(file.id),
-                    onChanged: (_) => _toggle(file),
-                    title: Text(
-                      file.name,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+              child: visible.isEmpty
+                  ? Center(
+                      child: Text(
+                        l10n.viewerSearchNoResults,
+                        style: const TextStyle(color: AppColors.textSecondary),
+                      ),
+                    )
+                  : ListView.builder(
+                      controller: widget.scrollController,
+                      itemCount: visible.length,
+                      itemBuilder: (_, i) {
+                        final file = visible[i];
+                        return CheckboxListTile(
+                          value: _selected.contains(file.id),
+                          onChanged: (_) => _toggle(file),
+                          title: Text(
+                            file.name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: file.size != null
+                              ? Text(
+                                  _fmt(file.size!),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                )
+                              : null,
+                          secondary: const Icon(
+                            Icons.picture_as_pdf_outlined,
+                            color: Color(0xFFDB4437),
+                          ),
+                          controlAffinity: ListTileControlAffinity.leading,
+                        );
+                      },
                     ),
-                    subtitle: file.size != null
-                        ? Text(
-                            _fmt(file.size!),
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
-                            ),
-                          )
-                        : null,
-                    secondary: const Icon(
-                      Icons.picture_as_pdf_outlined,
-                      color: Color(0xFFDB4437),
-                    ),
-                    controlAffinity: ListTileControlAffinity.leading,
-                  );
-                },
-              ),
             ),
             const Divider(height: 1),
             _ActionBar(
-              selectedCount: _selected.length,
-              totalCount: _files.length,
+              allSelected: allChecked,
               onToggleAll: _toggleAll,
               onAction: _selected.isEmpty ? null : _import,
               actionLabel: _selected.isEmpty
@@ -421,15 +459,25 @@ class _UploadTabState extends State<_UploadTab>
   final Set<String> _selected = {};
   int _current = 0;
   int _total = 0;
+  int _uploadedCount = 0;
+
+  final _searchController = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   Future<void> _upload(List<Document> docs) async {
     if (_selected.isEmpty) return;
-    final l10n = AppLocalizations.of(context)!;
     final toUpload = docs.where((d) => _selected.contains(d.id)).toList();
     setState(() {
       _state = _LoadState.busy;
       _current = 0;
       _total = toUpload.length;
+      _uploadedCount = 0;
     });
 
     int uploaded = 0;
@@ -438,7 +486,6 @@ class _UploadTabState extends State<_UploadTab>
       try {
         setState(() => _current = uploaded + 1);
         final absPath = await resolveDocPath(doc.filePath);
-        // Ensure the file name ends with .pdf
         final fileName = doc.title.endsWith('.pdf')
             ? doc.title
             : '${doc.title}.pdf';
@@ -451,37 +498,34 @@ class _UploadTabState extends State<_UploadTab>
 
     if (!mounted) return;
     setState(() {
-      _state = _LoadState.loaded;
-      _selected.clear();
+      _uploadedCount = uploaded;
+      _state = hadError && uploaded == 0 ? _LoadState.error : _LoadState.done;
+      if (_state == _LoadState.done) _selected.clear();
     });
-
-    final messenger = ScaffoldMessenger.of(context);
-    if (uploaded > 0) {
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(l10n.driveUploadDone(uploaded)),
-          duration: const Duration(seconds: 3),
-        ),
-      );
-    }
-    if (hadError) {
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(l10n.driveErrorUpload),
-          backgroundColor: Colors.red.shade700,
-          duration: const Duration(seconds: 4),
-        ),
-      );
-    }
   }
 
-  void _toggleAll(List<Document> docs) => setState(() {
-    if (_selected.length == docs.length) {
-      _selected.clear();
-    } else {
-      _selected.addAll(docs.map((d) => d.id));
-    }
+  void _reset() => setState(() {
+    _state = _LoadState.loaded;
+    _query = '';
+    _searchController.clear();
   });
+
+  List<Document> _filter(List<Document> docs) => _query.isEmpty
+      ? docs
+      : docs
+            .where((d) => d.title.toLowerCase().contains(_query.toLowerCase()))
+            .toList();
+
+  void _toggleAll(List<Document> visible) {
+    setState(() {
+      final allChecked = visible.every((d) => _selected.contains(d.id));
+      if (allChecked) {
+        for (final d in visible) _selected.remove(d.id);
+      } else {
+        for (final d in visible) _selected.add(d.id);
+      }
+    });
+  }
 
   void _toggle(Document doc) => setState(
     () => _selected.contains(doc.id)
@@ -493,18 +537,31 @@ class _UploadTabState extends State<_UploadTab>
   Widget build(BuildContext context) {
     super.build(context);
     final l10n = AppLocalizations.of(context)!;
+    final allDocs = widget.notifier.all;
 
-    // All local documents (both scanned and imported)
-    final docs = widget.notifier.all;
-
+    // Upload in progress
     if (_state == _LoadState.busy) {
-      return _CenteredStatus(
-        text: l10n.driveUploading(_current, _total),
-        showSpinner: true,
+      return _ProgressView(
+        label: l10n.driveUploading(_current, _total),
+        progress: _total > 0 ? _current / _total : 0,
       );
     }
 
-    if (docs.isEmpty) {
+    // Upload done — success screen
+    if (_state == _LoadState.done) {
+      return _SuccessView(
+        message: l10n.driveUploadDone(_uploadedCount),
+        onDone: _reset,
+      );
+    }
+
+    // Error
+    if (_state == _LoadState.error) {
+      return _ErrorView(message: l10n.driveErrorUpload, onRetry: _reset);
+    }
+
+    // Empty local library
+    if (allDocs.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -528,57 +585,64 @@ class _UploadTabState extends State<_UploadTab>
       );
     }
 
+    final visible = _filter(allDocs);
+    final allChecked =
+        visible.isNotEmpty && visible.every((d) => _selected.contains(d.id));
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
-          child: Text(
-            l10n.driveUploadSheetSubtitle,
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppColors.textSecondary,
-            ),
-          ),
+        // search bar
+        _SearchBar(
+          controller: _searchController,
+          hint: l10n.homeSearchHint,
+          onChanged: (v) => setState(() => _query = v),
         ),
+        // list
         Expanded(
-          child: ListView.builder(
-            controller: widget.scrollController,
-            itemCount: docs.length,
-            itemBuilder: (_, i) {
-              final doc = docs[i];
-              return CheckboxListTile(
-                value: _selected.contains(doc.id),
-                onChanged: (_) => _toggle(doc),
-                title: Text(
-                  doc.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                subtitle: Text(
-                  doc.isImported ? 'Imported' : 'Scanned',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
+          child: visible.isEmpty
+              ? Center(
+                  child: Text(
+                    l10n.viewerSearchNoResults,
+                    style: const TextStyle(color: AppColors.textSecondary),
                   ),
+                )
+              : ListView.builder(
+                  controller: widget.scrollController,
+                  itemCount: visible.length,
+                  itemBuilder: (_, i) {
+                    final doc = visible[i];
+                    return CheckboxListTile(
+                      value: _selected.contains(doc.id),
+                      onChanged: (_) => _toggle(doc),
+                      title: Text(
+                        doc.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: Text(
+                        doc.isImported ? 'Imported' : 'Scanned',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      secondary: Icon(
+                        doc.isImported
+                            ? Icons.picture_as_pdf_outlined
+                            : Icons.document_scanner_outlined,
+                        color: const Color(0xFF4285F4),
+                      ),
+                      controlAffinity: ListTileControlAffinity.leading,
+                    );
+                  },
                 ),
-                secondary: Icon(
-                  doc.isImported
-                      ? Icons.picture_as_pdf_outlined
-                      : Icons.document_scanner_outlined,
-                  color: const Color(0xFF4285F4),
-                ),
-                controlAffinity: ListTileControlAffinity.leading,
-              );
-            },
-          ),
         ),
         const Divider(height: 1),
         _ActionBar(
-          selectedCount: _selected.length,
-          totalCount: docs.length,
-          onToggleAll: () => _toggleAll(docs),
-          onAction: _selected.isEmpty ? null : () => _upload(docs),
+          allSelected: allChecked,
+          onToggleAll: () => _toggleAll(visible),
+          onAction: _selected.isEmpty ? null : () => _upload(allDocs),
           actionLabel: _selected.isEmpty
               ? l10n.driveUploadButton
               : '${l10n.driveUploadButton} (${_selected.length})',
@@ -594,11 +658,144 @@ class _UploadTabState extends State<_UploadTab>
 // Shared helper widgets
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// Inline search bar used inside both tabs.
+class _SearchBar extends StatelessWidget {
+  final TextEditingController controller;
+  final String hint;
+  final ValueChanged<String> onChanged;
+
+  const _SearchBar({
+    required this.controller,
+    required this.hint,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+      child: TextField(
+        controller: controller,
+        onChanged: onChanged,
+        decoration: InputDecoration(
+          hintText: hint,
+          prefixIcon: const Icon(Icons.search, size: 20),
+          suffixIcon: controller.text.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.close, size: 18),
+                  onPressed: () {
+                    controller.clear();
+                    onChanged('');
+                  },
+                )
+              : null,
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 0,
+            horizontal: 12,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Determinate progress bar shown during upload/download.
+class _ProgressView extends StatelessWidget {
+  final String label;
+  final double progress; // 0.0 – 1.0
+
+  const _ProgressView({required this.label, required this.progress});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.cloud_upload_outlined,
+              size: 52,
+              color: Color(0xFF4285F4),
+            ),
+            const SizedBox(height: 20),
+            Text(label, style: const TextStyle(color: AppColors.textSecondary)),
+            const SizedBox(height: 16),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(value: progress, minHeight: 8),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '${(progress * 100).toStringAsFixed(0)}%',
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Shown after a successful upload.
+class _SuccessView extends StatelessWidget {
+  final String message;
+  final VoidCallback onDone;
+
+  const _SuccessView({required this.message, required this.onDone});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.check_circle_outline_rounded,
+                size: 44,
+                color: Colors.green.shade600,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 24),
+            FilledButton(onPressed: onDone, child: const Text('Done')),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _CenteredStatus extends StatelessWidget {
   final String text;
-  final bool showSpinner;
 
-  const _CenteredStatus({required this.text, this.showSpinner = true});
+  const _CenteredStatus({required this.text});
 
   @override
   Widget build(BuildContext context) {
@@ -606,10 +803,8 @@ class _CenteredStatus extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (showSpinner) ...[
-            const CircularProgressIndicator(),
-            const SizedBox(height: 20),
-          ],
+          const CircularProgressIndicator(),
+          const SizedBox(height: 20),
           Text(text, style: const TextStyle(color: AppColors.textSecondary)),
         ],
       ),
@@ -652,8 +847,7 @@ class _ErrorView extends StatelessWidget {
 }
 
 class _ActionBar extends StatelessWidget {
-  final int selectedCount;
-  final int totalCount;
+  final bool allSelected;
   final VoidCallback onToggleAll;
   final VoidCallback? onAction;
   final String actionLabel;
@@ -661,8 +855,7 @@ class _ActionBar extends StatelessWidget {
   final AppLocalizations l10n;
 
   const _ActionBar({
-    required this.selectedCount,
-    required this.totalCount,
+    required this.allSelected,
     required this.onToggleAll,
     required this.onAction,
     required this.actionLabel,
@@ -672,7 +865,6 @@ class _ActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final allSelected = selectedCount == totalCount && totalCount > 0;
     return SafeArea(
       top: false,
       child: Padding(
