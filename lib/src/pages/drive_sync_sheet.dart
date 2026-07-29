@@ -5,6 +5,7 @@ import '../constants/app_colors.dart';
 import '../db/app_db.dart';
 import '../db/docs_notifier.dart';
 import '../services/drive_service.dart';
+import '../services/drive_upload_registry.dart';
 
 /// Shows the Google Drive sync bottom-sheet (download + upload tabs).
 Future<void> showDriveSyncSheet(
@@ -23,10 +24,6 @@ Future<void> showDriveSyncSheet(
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Shared state
-// ─────────────────────────────────────────────────────────────────────────────
-
 enum _LoadState { signingIn, loading, loaded, busy, done, error }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -36,7 +33,6 @@ enum _LoadState { signingIn, loading, loaded, busy, done, error }
 class DriveSyncSheet extends StatefulWidget {
   final AppDatabase db;
   final DocsNotifier notifier;
-
   const DriveSyncSheet({super.key, required this.db, required this.notifier});
 
   @override
@@ -47,7 +43,6 @@ class _DriveSyncSheetState extends State<DriveSyncSheet>
     with SingleTickerProviderStateMixin {
   final _drive = DriveService();
   late final TabController _tabs;
-
   _LoadState _authState = _LoadState.signingIn;
   String _authError = '';
 
@@ -90,15 +85,13 @@ class _DriveSyncSheetState extends State<DriveSyncSheet>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-
     return DraggableScrollableSheet(
       expand: false,
       initialChildSize: 0.80,
       minChildSize: 0.4,
       maxChildSize: 0.95,
-      builder: (_, scrollController) => Column(
+      builder: (_, sc) => Column(
         children: [
-          // drag handle
           const SizedBox(height: 12),
           Container(
             width: 40,
@@ -109,8 +102,6 @@ class _DriveSyncSheetState extends State<DriveSyncSheet>
             ),
           ),
           const SizedBox(height: 16),
-
-          // header
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
@@ -139,8 +130,6 @@ class _DriveSyncSheetState extends State<DriveSyncSheet>
             ),
           ),
           const SizedBox(height: 8),
-
-          // tab bar (only when authenticated)
           if (_authState == _LoadState.loaded) ...[
             TabBar(
               controller: _tabs,
@@ -151,9 +140,7 @@ class _DriveSyncSheetState extends State<DriveSyncSheet>
             ),
           ],
           const Divider(height: 1),
-
-          // body
-          Expanded(child: _buildBody(l10n, scrollController)),
+          Expanded(child: _buildBody(l10n, sc)),
         ],
       ),
     );
@@ -190,6 +177,7 @@ class _DriveSyncSheetState extends State<DriveSyncSheet>
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Download tab  (From Drive → import to app)
+// Detects already-local files by normalised name match; shows badge + disables.
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _DownloadTab extends StatefulWidget {
@@ -197,14 +185,12 @@ class _DownloadTab extends StatefulWidget {
   final AppDatabase db;
   final DocsNotifier notifier;
   final ScrollController scrollController;
-
   const _DownloadTab({
     required this.drive,
     required this.db,
     required this.notifier,
     required this.scrollController,
   });
-
   @override
   State<_DownloadTab> createState() => _DownloadTabState();
 }
@@ -218,11 +204,18 @@ class _DownloadTabState extends State<_DownloadTab>
   String _errorMessage = '';
   List<DriveFile> _files = [];
   final Set<String> _selected = {};
-  int _current = 0;
-  int _total = 0;
-
+  int _current = 0, _total = 0;
   final _searchController = TextEditingController();
   String _query = '';
+
+  /// Normalised local titles: lowercase, no .pdf suffix.
+  Set<String> get _localTitles =>
+      widget.notifier.all.map((d) => _norm(d.title)).toSet();
+
+  String _norm(String name) =>
+      name.toLowerCase().replaceAll(RegExp(r'\.pdf$'), '').trim();
+
+  bool _isLocal(DriveFile f) => _localTitles.contains(_norm(f.name));
 
   @override
   void initState() {
@@ -264,7 +257,6 @@ class _DownloadTabState extends State<_DownloadTab>
       _current = 0;
       _total = toImport.length;
     });
-
     int imported = 0;
     bool hadError = false;
     for (final file in toImport) {
@@ -277,29 +269,25 @@ class _DownloadTabState extends State<_DownloadTab>
         hadError = true;
       }
     }
-
     await widget.notifier.reload();
     if (!mounted) return;
-
     Navigator.of(context).pop();
-    final messenger = ScaffoldMessenger.of(context);
-    if (imported > 0) {
-      messenger.showSnackBar(
+    final m = ScaffoldMessenger.of(context);
+    if (imported > 0)
+      m.showSnackBar(
         SnackBar(
           content: Text(l10n.driveImportDone(imported)),
           duration: const Duration(seconds: 3),
         ),
       );
-    }
-    if (hadError) {
-      messenger.showSnackBar(
+    if (hadError)
+      m.showSnackBar(
         SnackBar(
           content: Text(l10n.driveErrorImport),
           backgroundColor: Colors.red.shade700,
           duration: const Duration(seconds: 4),
         ),
       );
-    }
   }
 
   List<DriveFile> get _filtered => _query.isEmpty
@@ -309,13 +297,13 @@ class _DownloadTabState extends State<_DownloadTab>
             .toList();
 
   void _toggleAll() {
-    final visible = _filtered;
+    final selectable = _filtered.where((f) => !_isLocal(f)).toList();
     setState(() {
-      final allChecked = visible.every((f) => _selected.contains(f.id));
+      final allChecked = selectable.every((f) => _selected.contains(f.id));
       if (allChecked) {
-        for (final f in visible) _selected.remove(f.id);
+        for (final f in selectable) _selected.remove(f.id);
       } else {
-        for (final f in visible) _selected.add(f.id);
+        for (final f in selectable) _selected.add(f.id);
       }
     });
   }
@@ -329,7 +317,6 @@ class _DownloadTabState extends State<_DownloadTab>
   Widget build(BuildContext context) {
     super.build(context);
     final l10n = AppLocalizations.of(context)!;
-
     switch (_state) {
       case _LoadState.loading:
         return _CenteredStatus(text: l10n.driveLoading);
@@ -354,21 +341,18 @@ class _DownloadTabState extends State<_DownloadTab>
             ),
           );
         }
-
         final visible = _filtered;
+        final selectable = visible.where((f) => !_isLocal(f)).toList();
         final allChecked =
-            visible.isNotEmpty &&
-            visible.every((f) => _selected.contains(f.id));
-
+            selectable.isNotEmpty &&
+            selectable.every((f) => _selected.contains(f.id));
         return Column(
           children: [
-            // search bar
             _SearchBar(
               controller: _searchController,
               hint: l10n.homeSearchHint,
               onChanged: (v) => setState(() => _query = v),
             ),
-            // list
             Expanded(
               child: visible.isEmpty
                   ? Center(
@@ -382,13 +366,17 @@ class _DownloadTabState extends State<_DownloadTab>
                       itemCount: visible.length,
                       itemBuilder: (_, i) {
                         final file = visible[i];
+                        final local = _isLocal(file);
                         return CheckboxListTile(
-                          value: _selected.contains(file.id),
-                          onChanged: (_) => _toggle(file),
+                          value: local ? false : _selected.contains(file.id),
+                          onChanged: local ? null : (_) => _toggle(file),
                           title: Text(
                             file.name,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: local ? AppColors.textSecondary : null,
+                            ),
                           ),
                           subtitle: file.size != null
                               ? Text(
@@ -399,10 +387,16 @@ class _DownloadTabState extends State<_DownloadTab>
                                   ),
                                 )
                               : null,
-                          secondary: const Icon(
-                            Icons.picture_as_pdf_outlined,
-                            color: Color(0xFFDB4437),
-                          ),
+                          secondary: local
+                              ? _Badge(
+                                  icon: Icons.check_circle_rounded,
+                                  label: 'In app',
+                                  color: Colors.green.shade600,
+                                )
+                              : const Icon(
+                                  Icons.picture_as_pdf_outlined,
+                                  color: Color(0xFFDB4437),
+                                ),
                           controlAffinity: ListTileControlAffinity.leading,
                         );
                       },
@@ -424,28 +418,28 @@ class _DownloadTabState extends State<_DownloadTab>
     }
   }
 
-  String _fmt(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  String _fmt(int b) {
+    if (b < 1024) return '$b B';
+    if (b < 1024 * 1024) return '${(b / 1024).toStringAsFixed(1)} KB';
+    return '${(b / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Upload tab  (local docs → Drive)
+// Loads registry on init; hides already-uploaded docs; shows ☁ badge for
+// docs uploaded this session; persists IDs on success.
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _UploadTab extends StatefulWidget {
   final DriveService drive;
   final DocsNotifier notifier;
   final ScrollController scrollController;
-
   const _UploadTab({
     required this.drive,
     required this.notifier,
     required this.scrollController,
   });
-
   @override
   State<_UploadTab> createState() => _UploadTabState();
 }
@@ -455,14 +449,21 @@ class _UploadTabState extends State<_UploadTab>
   @override
   bool get wantKeepAlive => true;
 
-  _LoadState _state = _LoadState.loaded;
-  final Set<String> _selected = {};
-  int _current = 0;
-  int _total = 0;
-  int _uploadedCount = 0;
+  _LoadState _state = _LoadState.loading;
+  DriveUploadRegistry? _registry;
 
+  /// IDs uploaded during this session (shown with badge before success screen).
+  final Set<String> _justUploaded = {};
+  final Set<String> _selected = {};
+  int _current = 0, _total = 0, _uploadedCount = 0;
   final _searchController = TextEditingController();
   String _query = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRegistry();
+  }
 
   @override
   void dispose() {
@@ -470,16 +471,40 @@ class _UploadTabState extends State<_UploadTab>
     super.dispose();
   }
 
-  Future<void> _upload(List<Document> docs) async {
+  Future<void> _loadRegistry() async {
+    final registry = await DriveUploadRegistry.load();
+    if (!mounted) return;
+    setState(() {
+      _registry = registry;
+      _state = _LoadState.loaded;
+    });
+  }
+
+  /// Docs that haven't been uploaded yet (excludes persisted + just-uploaded).
+  List<Document> _pending(List<Document> all) {
+    if (_registry == null) return [];
+    return all
+        .where(
+          (d) => !_registry!.hasUploaded(d.id) && !_justUploaded.contains(d.id),
+        )
+        .toList();
+  }
+
+  List<Document> _filter(List<Document> docs) => _query.isEmpty
+      ? docs
+      : docs
+            .where((d) => d.title.toLowerCase().contains(_query.toLowerCase()))
+            .toList();
+
+  Future<void> _upload(List<Document> pending) async {
     if (_selected.isEmpty) return;
-    final toUpload = docs.where((d) => _selected.contains(d.id)).toList();
+    final toUpload = pending.where((d) => _selected.contains(d.id)).toList();
     setState(() {
       _state = _LoadState.busy;
       _current = 0;
       _total = toUpload.length;
       _uploadedCount = 0;
     });
-
     int uploaded = 0;
     bool hadError = false;
     for (final doc in toUpload) {
@@ -491,16 +516,18 @@ class _UploadTabState extends State<_UploadTab>
             : '${doc.title}.pdf';
         await widget.drive.uploadFile(absPath, fileName);
         uploaded++;
+        _justUploaded.add(doc.id);
       } catch (_) {
         hadError = true;
       }
     }
-
+    // Persist successfully uploaded IDs.
+    if (uploaded > 0) await _registry!.markAllUploaded(_justUploaded);
     if (!mounted) return;
     setState(() {
       _uploadedCount = uploaded;
-      _state = hadError && uploaded == 0 ? _LoadState.error : _LoadState.done;
-      if (_state == _LoadState.done) _selected.clear();
+      _selected.clear();
+      _state = (hadError && uploaded == 0) ? _LoadState.error : _LoadState.done;
     });
   }
 
@@ -509,12 +536,6 @@ class _UploadTabState extends State<_UploadTab>
     _query = '';
     _searchController.clear();
   });
-
-  List<Document> _filter(List<Document> docs) => _query.isEmpty
-      ? docs
-      : docs
-            .where((d) => d.title.toLowerCase().contains(_query.toLowerCase()))
-            .toList();
 
   void _toggleAll(List<Document> visible) {
     setState(() {
@@ -537,31 +558,27 @@ class _UploadTabState extends State<_UploadTab>
   Widget build(BuildContext context) {
     super.build(context);
     final l10n = AppLocalizations.of(context)!;
-    final allDocs = widget.notifier.all;
 
-    // Upload in progress
-    if (_state == _LoadState.busy) {
+    if (_state == _LoadState.loading)
+      return _CenteredStatus(text: l10n.driveLoading);
+    if (_state == _LoadState.busy)
       return _ProgressView(
         label: l10n.driveUploading(_current, _total),
         progress: _total > 0 ? _current / _total : 0,
       );
-    }
-
-    // Upload done — success screen
-    if (_state == _LoadState.done) {
+    if (_state == _LoadState.done)
       return _SuccessView(
         message: l10n.driveUploadDone(_uploadedCount),
         onDone: _reset,
       );
-    }
-
-    // Error
-    if (_state == _LoadState.error) {
+    if (_state == _LoadState.error)
       return _ErrorView(message: l10n.driveErrorUpload, onRetry: _reset);
-    }
 
-    // Empty local library
-    if (allDocs.isEmpty) {
+    final allDocs = widget.notifier.all;
+    final pending = _pending(allDocs);
+
+    // Nothing left to upload.
+    if (pending.isEmpty && _justUploaded.isEmpty && allDocs.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -585,20 +602,42 @@ class _UploadTabState extends State<_UploadTab>
       );
     }
 
-    final visible = _filter(allDocs);
+    if (pending.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.cloud_done_outlined,
+                size: 56,
+                color: Colors.green.shade400,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                l10n.driveUploadDone(allDocs.length),
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 15),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final visible = _filter(pending);
     final allChecked =
         visible.isNotEmpty && visible.every((d) => _selected.contains(d.id));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // search bar
         _SearchBar(
           controller: _searchController,
           hint: l10n.homeSearchHint,
           onChanged: (v) => setState(() => _query = v),
         ),
-        // list
         Expanded(
           child: visible.isEmpty
               ? Center(
@@ -612,13 +651,17 @@ class _UploadTabState extends State<_UploadTab>
                   itemCount: visible.length,
                   itemBuilder: (_, i) {
                     final doc = visible[i];
+                    final justDone = _justUploaded.contains(doc.id);
                     return CheckboxListTile(
-                      value: _selected.contains(doc.id),
-                      onChanged: (_) => _toggle(doc),
+                      value: justDone ? false : _selected.contains(doc.id),
+                      onChanged: justDone ? null : (_) => _toggle(doc),
                       title: Text(
                         doc.title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: justDone ? AppColors.textSecondary : null,
+                        ),
                       ),
                       subtitle: Text(
                         doc.isImported ? 'Imported' : 'Scanned',
@@ -627,12 +670,18 @@ class _UploadTabState extends State<_UploadTab>
                           color: AppColors.textSecondary,
                         ),
                       ),
-                      secondary: Icon(
-                        doc.isImported
-                            ? Icons.picture_as_pdf_outlined
-                            : Icons.document_scanner_outlined,
-                        color: const Color(0xFF4285F4),
-                      ),
+                      secondary: justDone
+                          ? _Badge(
+                              icon: Icons.cloud_done_outlined,
+                              label: 'On Drive',
+                              color: const Color(0xFF4285F4),
+                            )
+                          : Icon(
+                              doc.isImported
+                                  ? Icons.picture_as_pdf_outlined
+                                  : Icons.document_scanner_outlined,
+                              color: const Color(0xFF4285F4),
+                            ),
                       controlAffinity: ListTileControlAffinity.leading,
                     );
                   },
@@ -642,7 +691,7 @@ class _UploadTabState extends State<_UploadTab>
         _ActionBar(
           allSelected: allChecked,
           onToggleAll: () => _toggleAll(visible),
-          onAction: _selected.isEmpty ? null : () => _upload(allDocs),
+          onAction: _selected.isEmpty ? null : () => _upload(pending),
           actionLabel: _selected.isEmpty
               ? l10n.driveUploadButton
               : '${l10n.driveUploadButton} (${_selected.length})',
@@ -658,12 +707,10 @@ class _UploadTabState extends State<_UploadTab>
 // Shared helper widgets
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Inline search bar used inside both tabs.
 class _SearchBar extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
   final ValueChanged<String> onChanged;
-
   const _SearchBar({
     required this.controller,
     required this.hint,
@@ -707,11 +754,37 @@ class _SearchBar extends StatelessWidget {
   }
 }
 
-/// Determinate progress bar shown during upload/download.
+/// Small coloured icon + label chip used as a list-tile secondary.
+class _Badge extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  const _Badge({required this.icon, required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: color, size: 20),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 9,
+            color: color,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _ProgressView extends StatelessWidget {
   final String label;
-  final double progress; // 0.0 – 1.0
-
+  final double progress;
   const _ProgressView({required this.label, required this.progress});
 
   @override
@@ -749,11 +822,9 @@ class _ProgressView extends StatelessWidget {
   }
 }
 
-/// Shown after a successful upload.
 class _SuccessView extends StatelessWidget {
   final String message;
   final VoidCallback onDone;
-
   const _SuccessView({required this.message, required this.onDone});
 
   @override
@@ -794,7 +865,6 @@ class _SuccessView extends StatelessWidget {
 
 class _CenteredStatus extends StatelessWidget {
   final String text;
-
   const _CenteredStatus({required this.text});
 
   @override
@@ -815,7 +885,6 @@ class _CenteredStatus extends StatelessWidget {
 class _ErrorView extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
-
   const _ErrorView({required this.message, required this.onRetry});
 
   @override
@@ -853,7 +922,6 @@ class _ActionBar extends StatelessWidget {
   final String actionLabel;
   final IconData actionIcon;
   final AppLocalizations l10n;
-
   const _ActionBar({
     required this.allSelected,
     required this.onToggleAll,
