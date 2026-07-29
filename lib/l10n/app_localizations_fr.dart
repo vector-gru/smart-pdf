@@ -102,6 +102,39 @@ class AppLocalizationsFr extends AppLocalizations {
   String get driveSignOut => 'Se déconnecter';
 
   @override
+  String get driveUploadSheetSubtitle =>
+      'Sélectionnez des documents locaux à envoyer sur Drive';
+
+  @override
+  String driveUploading(int current, int total) {
+    return 'Envoi de $current sur $total…';
+  }
+
+  @override
+  String driveUploadDone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count fichiers envoyés',
+      one: '1 fichier envoyé',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get driveUploadButton => 'Envoyer la sélection';
+
+  @override
+  String get driveErrorUpload =>
+      'Certains fichiers n\'ont pas pu être envoyés.';
+
+  @override
+  String get driveTabDownload => 'Depuis Drive';
+
+  @override
+  String get driveTabUpload => 'Vers Drive';
+
+  @override
   String get filesEmptySubtitle =>
       'Commencez à ajouter des PDF pour constituer votre bibliothèque !';
 

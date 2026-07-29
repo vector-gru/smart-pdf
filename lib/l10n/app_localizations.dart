@@ -254,6 +254,48 @@ abstract class AppLocalizations {
   /// **'Sign out'**
   String get driveSignOut;
 
+  /// No description provided for @driveUploadSheetSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select local documents to upload to Drive'**
+  String get driveUploadSheetSubtitle;
+
+  /// No description provided for @driveUploading.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading {current} of {total}…'**
+  String driveUploading(int current, int total);
+
+  /// No description provided for @driveUploadDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 file uploaded} other{{count} files uploaded}}'**
+  String driveUploadDone(int count);
+
+  /// No description provided for @driveUploadButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload selected'**
+  String get driveUploadButton;
+
+  /// No description provided for @driveErrorUpload.
+  ///
+  /// In en, this message translates to:
+  /// **'Some files could not be uploaded.'**
+  String get driveErrorUpload;
+
+  /// No description provided for @driveTabDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'From Drive'**
+  String get driveTabDownload;
+
+  /// No description provided for @driveTabUpload.
+  ///
+  /// In en, this message translates to:
+  /// **'To Drive'**
+  String get driveTabUpload;
+
   /// No description provided for @filesEmptySubtitle.
   ///
   /// In en, this message translates to:

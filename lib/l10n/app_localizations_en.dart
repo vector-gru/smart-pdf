@@ -98,6 +98,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get driveSignOut => 'Sign out';
 
   @override
+  String get driveUploadSheetSubtitle =>
+      'Select local documents to upload to Drive';
+
+  @override
+  String driveUploading(int current, int total) {
+    return 'Uploading $current of $total…';
+  }
+
+  @override
+  String driveUploadDone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count files uploaded',
+      one: '1 file uploaded',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get driveUploadButton => 'Upload selected';
+
+  @override
+  String get driveErrorUpload => 'Some files could not be uploaded.';
+
+  @override
+  String get driveTabDownload => 'From Drive';
+
+  @override
+  String get driveTabUpload => 'To Drive';
+
+  @override
   String get filesEmptySubtitle =>
       'Start adding PDF files to build your digital library!';
 

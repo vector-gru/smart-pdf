@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sign_in_as_googleapis_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
+import 'package:mime/mime.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -21,9 +22,8 @@ class DriveService {
   factory DriveService() => _instance;
   DriveService._();
 
-  final _googleSignIn = GoogleSignIn(
-    scopes: [drive.DriveApi.driveReadonlyScope],
-  );
+  // driveScope gives read + write access (needed for uploads).
+  final _googleSignIn = GoogleSignIn(scopes: [drive.DriveApi.driveScope]);
 
   GoogleSignInAccount? _account;
   GoogleSignInAccount? get currentAccount => _account;
@@ -33,7 +33,9 @@ class DriveService {
 
   /// Attempts a silent sign-in first; falls back to interactive sign-in.
   Future<GoogleSignInAccount?> signIn() async {
-    _account = await _googleSignIn.signInSilently();
+    try {
+      _account = await _googleSignIn.signInSilently();
+    } catch (_) {}
     _account ??= await _googleSignIn.signIn();
     return _account;
   }
@@ -50,6 +52,8 @@ class DriveService {
     if (client == null) throw Exception('Not authenticated');
     return drive.DriveApi(client);
   }
+
+  // ── Download ─────────────────────────────────────────────────────────────────
 
   /// Returns all PDF files visible to the user in Drive.
   /// Paginates automatically.
@@ -83,7 +87,7 @@ class DriveService {
     return files;
   }
 
-  /// Downloads a Drive file by [fileId] to a temporary directory.
+  /// Downloads a Drive file to a temporary directory.
   /// Returns the absolute path of the downloaded file.
   Future<String> downloadFile(DriveFile file) async {
     final api = await _api();
@@ -109,5 +113,33 @@ class DriveService {
     await sink.close();
 
     return destPath;
+  }
+
+  // ── Upload ───────────────────────────────────────────────────────────────────
+
+  /// Uploads [localPath] to the root of the user's Drive.
+  /// [fileName] is what the file will be named in Drive.
+  /// Returns the Drive file ID of the uploaded file.
+  Future<String> uploadFile(String localPath, String fileName) async {
+    final api = await _api();
+    final file = File(localPath);
+    final length = await file.length();
+    final mimeType = lookupMimeType(localPath) ?? 'application/pdf';
+
+    final metadata = drive.File()
+      ..name = fileName
+      ..mimeType = mimeType;
+
+    final media = drive.Media(file.openRead(), length, contentType: mimeType);
+
+    final result = await api.files.create(
+      metadata,
+      uploadMedia: media,
+      $fields: 'id',
+    );
+
+    if (result.id == null)
+      throw Exception('Upload failed: no file ID returned');
+    return result.id!;
   }
 }

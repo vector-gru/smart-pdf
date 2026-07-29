@@ -41,6 +41,25 @@
   "driveSelectAll": "Select all",
   "driveDeselectAll": "Deselect all",
   "driveSignOut": "Sign out",
+
+  "driveUploadSheetSubtitle": "Select local documents to upload to Drive",
+  "driveUploading": "Uploading {current} of {total}…",
+  "@driveUploading": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "driveUploadDone": "{count, plural, =1{1 file uploaded} other{{count} files uploaded}}",
+  "@driveUploadDone": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "driveUploadButton": "Upload selected",
+  "driveErrorUpload": "Some files could not be uploaded.",
+  "driveTabDownload": "From Drive",
+  "driveTabUpload": "To Drive",
   "filesEmptySubtitle": "Start adding PDF files to build your digital library!",
 
   "recentTitle": "Recent",

@@ -6,8 +6,7 @@ import '../db/app_db.dart';
 import '../db/docs_notifier.dart';
 import '../services/drive_service.dart';
 
-/// Bottom-sheet that drives the full Google Drive → import flow.
-/// Call [showDriveSyncSheet] to display it.
+/// Shows the Google Drive sync bottom-sheet (download + upload tabs).
 Future<void> showDriveSyncSheet(
   BuildContext context, {
   required AppDatabase db,
@@ -24,9 +23,15 @@ Future<void> showDriveSyncSheet(
   );
 }
 
-// ── Sheet states ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared state enums
+// ─────────────────────────────────────────────────────────────────────────────
 
-enum _SheetState { signingIn, loading, loaded, importing, error }
+enum _LoadState { signingIn, loading, loaded, busy, error }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Root sheet — owns sign-in and TabBar
+// ─────────────────────────────────────────────────────────────────────────────
 
 class DriveSyncSheet extends StatefulWidget {
   final AppDatabase db;
@@ -38,88 +43,226 @@ class DriveSyncSheet extends StatefulWidget {
   State<DriveSyncSheet> createState() => _DriveSyncSheetState();
 }
 
-class _DriveSyncSheetState extends State<DriveSyncSheet> {
+class _DriveSyncSheetState extends State<DriveSyncSheet>
+    with SingleTickerProviderStateMixin {
   final _drive = DriveService();
+  late final TabController _tabs;
 
-  _SheetState _state = _SheetState.signingIn;
-  String _errorMessage = '';
-
-  List<DriveFile> _files = [];
-  final Set<String> _selected = {};
-
-  int _importCurrent = 0;
-  int _importTotal = 0;
+  _LoadState _authState = _LoadState.signingIn;
+  String _authError = '';
 
   @override
   void initState() {
     super.initState();
-    _start();
+    _tabs = TabController(length: 2, vsync: this);
+    _signIn();
   }
 
-  // ── Auth + load ─────────────────────────────────────────────────────────────
+  @override
+  void dispose() {
+    _tabs.dispose();
+    super.dispose();
+  }
 
-  Future<void> _start() async {
-    setState(() => _state = _SheetState.signingIn);
-
+  Future<void> _signIn() async {
+    setState(() => _authState = _LoadState.signingIn);
     try {
       final account = await _drive.signIn();
       if (account == null) {
-        // User cancelled the sign-in dialog — just close the sheet.
         if (mounted) Navigator.of(context).pop();
         return;
       }
+      if (mounted) setState(() => _authState = _LoadState.loaded);
     } catch (_) {
       if (mounted)
         setState(() {
-          _state = _SheetState.error;
-          _errorMessage = AppLocalizations.of(context)!.driveErrorSignIn;
+          _authState = _LoadState.error;
+          _authError = AppLocalizations.of(context)!.driveErrorSignIn;
         });
-      return;
     }
-
-    await _loadFiles();
   }
 
-  Future<void> _loadFiles() async {
-    setState(() => _state = _SheetState.loading);
+  Future<void> _signOut() async {
+    await _drive.signOut();
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.80,
+      minChildSize: 0.4,
+      maxChildSize: 0.95,
+      builder: (_, scrollController) => Column(
+        children: [
+          // ── drag handle ──────────────────────────────────────────────────
+          const SizedBox(height: 12),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // ── header ───────────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.add_to_drive,
+                  color: Color(0xFF4285F4),
+                  size: 28,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    l10n.driveSheetTitle,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                if (_authState == _LoadState.loaded && _drive.isSignedIn)
+                  TextButton(
+                    onPressed: _signOut,
+                    child: Text(l10n.driveSignOut),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // ── tab bar (only when authenticated) ────────────────────────────
+          if (_authState == _LoadState.loaded) ...[
+            TabBar(
+              controller: _tabs,
+              tabs: [
+                Tab(text: l10n.driveTabDownload),
+                Tab(text: l10n.driveTabUpload),
+              ],
+            ),
+          ],
+          const Divider(height: 1),
+
+          // ── body ─────────────────────────────────────────────────────────
+          Expanded(child: _buildBody(l10n, scrollController)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBody(AppLocalizations l10n, ScrollController sc) {
+    switch (_authState) {
+      case _LoadState.signingIn:
+        return _CenteredStatus(text: l10n.driveSigningIn);
+      case _LoadState.error:
+        return _ErrorView(message: _authError, onRetry: _signIn);
+      case _LoadState.loaded:
+        return TabBarView(
+          controller: _tabs,
+          children: [
+            _DownloadTab(
+              drive: _drive,
+              db: widget.db,
+              notifier: widget.notifier,
+              scrollController: sc,
+            ),
+            _UploadTab(
+              drive: _drive,
+              notifier: widget.notifier,
+              scrollController: sc,
+            ),
+          ],
+        );
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Download tab  (From Drive → import to app)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _DownloadTab extends StatefulWidget {
+  final DriveService drive;
+  final AppDatabase db;
+  final DocsNotifier notifier;
+  final ScrollController scrollController;
+
+  const _DownloadTab({
+    required this.drive,
+    required this.db,
+    required this.notifier,
+    required this.scrollController,
+  });
+
+  @override
+  State<_DownloadTab> createState() => _DownloadTabState();
+}
+
+class _DownloadTabState extends State<_DownloadTab>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  _LoadState _state = _LoadState.loading;
+  String _errorMessage = '';
+  List<DriveFile> _files = [];
+  final Set<String> _selected = {};
+  int _current = 0;
+  int _total = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() => _state = _LoadState.loading);
     try {
-      final files = await _drive.listPdfFiles();
+      final files = await widget.drive.listPdfFiles();
       if (!mounted) return;
       setState(() {
         _files = files;
         _selected.clear();
-        _state = _SheetState.loaded;
+        _state = _LoadState.loaded;
       });
     } catch (_) {
       if (mounted)
         setState(() {
-          _state = _SheetState.error;
+          _state = _LoadState.error;
           _errorMessage = AppLocalizations.of(context)!.driveErrorLoad;
         });
     }
   }
 
-  // ── Import ───────────────────────────────────────────────────────────────────
-
-  Future<void> _importSelected() async {
+  Future<void> _import() async {
     if (_selected.isEmpty) return;
     final l10n = AppLocalizations.of(context)!;
-
     final toImport = _files.where((f) => _selected.contains(f.id)).toList();
     setState(() {
-      _state = _SheetState.importing;
-      _importCurrent = 0;
-      _importTotal = toImport.length;
+      _state = _LoadState.busy;
+      _current = 0;
+      _total = toImport.length;
     });
 
     int imported = 0;
     bool hadError = false;
-
     for (final file in toImport) {
       try {
-        setState(() => _importCurrent = imported + 1);
-        final localPath = await _drive.downloadFile(file);
-        await widget.db.importPdfFile(localPath);
+        setState(() => _current = imported + 1);
+        final path = await widget.drive.downloadFile(file);
+        await widget.db.importPdfFile(path);
         imported++;
       } catch (_) {
         hadError = true;
@@ -127,11 +270,9 @@ class _DriveSyncSheetState extends State<DriveSyncSheet> {
     }
 
     await widget.notifier.reload();
-
     if (!mounted) return;
 
-    Navigator.of(context).pop(); // close sheet
-
+    Navigator.of(context).pop();
     final messenger = ScaffoldMessenger.of(context);
     if (imported > 0) {
       messenger.showSnackBar(
@@ -152,138 +293,36 @@ class _DriveSyncSheetState extends State<DriveSyncSheet> {
     }
   }
 
-  // ── Select-all helpers ───────────────────────────────────────────────────────
+  void _toggleAll() => setState(() {
+    if (_selected.length == _files.length) {
+      _selected.clear();
+    } else {
+      _selected.addAll(_files.map((f) => f.id));
+    }
+  });
 
-  void _toggleSelectAll() {
-    setState(() {
-      if (_selected.length == _files.length) {
-        _selected.clear();
-      } else {
-        _selected.addAll(_files.map((f) => f.id));
-      }
-    });
-  }
-
-  void _toggleFile(DriveFile file) {
-    setState(() {
-      if (_selected.contains(file.id)) {
-        _selected.remove(file.id);
-      } else {
-        _selected.add(file.id);
-      }
-    });
-  }
-
-  // ── Sign-out ─────────────────────────────────────────────────────────────────
-
-  Future<void> _signOut() async {
-    await _drive.signOut();
-    if (mounted) Navigator.of(context).pop();
-  }
-
-  // ── Build ────────────────────────────────────────────────────────────────────
+  void _toggle(DriveFile f) => setState(
+    () =>
+        _selected.contains(f.id) ? _selected.remove(f.id) : _selected.add(f.id),
+  );
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final l10n = AppLocalizations.of(context)!;
 
-    return DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.75,
-      minChildSize: 0.4,
-      maxChildSize: 0.95,
-      builder: (_, scrollController) => Column(
-        children: [
-          // drag handle
-          const SizedBox(height: 12),
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // header
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.add_to_drive,
-                  color: Color(0xFF4285F4),
-                  size: 28,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.driveSheetTitle,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      if (_state == _SheetState.loaded ||
-                          _state == _SheetState.importing)
-                        Text(
-                          l10n.driveSheetSubtitle,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                if (_state == _SheetState.loaded && _drive.isSignedIn)
-                  TextButton(
-                    onPressed: _signOut,
-                    child: Text(l10n.driveSignOut),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Divider(height: 1),
-
-          // body
-          Expanded(child: _buildBody(l10n, scrollController)),
-
-          // action bar
-          if (_state == _SheetState.loaded) ...[
-            const Divider(height: 1),
-            _ActionBar(
-              selectedCount: _selected.length,
-              totalCount: _files.length,
-              onToggleAll: _toggleSelectAll,
-              onImport: _selected.isEmpty ? null : _importSelected,
-              l10n: l10n,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBody(AppLocalizations l10n, ScrollController sc) {
     switch (_state) {
-      case _SheetState.signingIn:
-        return _CenteredStatus(text: l10n.driveSigningIn);
-      case _SheetState.loading:
+      case _LoadState.loading:
         return _CenteredStatus(text: l10n.driveLoading);
-      case _SheetState.importing:
+      case _LoadState.busy:
         return _CenteredStatus(
-          text: l10n.driveImporting(_importCurrent, _importTotal),
+          text: l10n.driveImporting(_current, _total),
           showSpinner: true,
         );
-      case _SheetState.error:
-        return _ErrorView(message: _errorMessage, onRetry: _start);
-      case _SheetState.loaded:
+      case _LoadState.error:
+        return _ErrorView(message: _errorMessage, onRetry: _load);
+      case _LoadState.loaded:
+      default:
         if (_files.isEmpty) {
           return Center(
             child: Padding(
@@ -296,48 +335,264 @@ class _DriveSyncSheetState extends State<DriveSyncSheet> {
             ),
           );
         }
-        return ListView.builder(
-          controller: sc,
-          itemCount: _files.length,
-          itemBuilder: (_, i) {
-            final file = _files[i];
-            final checked = _selected.contains(file.id);
-            return CheckboxListTile(
-              value: checked,
-              onChanged: (_) => _toggleFile(file),
-              title: Text(
-                file.name,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+        return Column(
+          children: [
+            Expanded(
+              child: ListView.builder(
+                controller: widget.scrollController,
+                itemCount: _files.length,
+                itemBuilder: (_, i) {
+                  final file = _files[i];
+                  return CheckboxListTile(
+                    value: _selected.contains(file.id),
+                    onChanged: (_) => _toggle(file),
+                    title: Text(
+                      file.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    subtitle: file.size != null
+                        ? Text(
+                            _fmt(file.size!),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          )
+                        : null,
+                    secondary: const Icon(
+                      Icons.picture_as_pdf_outlined,
+                      color: Color(0xFFDB4437),
+                    ),
+                    controlAffinity: ListTileControlAffinity.leading,
+                  );
+                },
               ),
-              subtitle: file.size != null
-                  ? Text(
-                      _formatSize(file.size!),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                    )
-                  : null,
-              secondary: const Icon(
-                Icons.picture_as_pdf_outlined,
-                color: Color(0xFFDB4437),
-              ),
-              controlAffinity: ListTileControlAffinity.leading,
-            );
-          },
+            ),
+            const Divider(height: 1),
+            _ActionBar(
+              selectedCount: _selected.length,
+              totalCount: _files.length,
+              onToggleAll: _toggleAll,
+              onAction: _selected.isEmpty ? null : _import,
+              actionLabel: _selected.isEmpty
+                  ? l10n.driveImportButton
+                  : '${l10n.driveImportButton} (${_selected.length})',
+              actionIcon: Icons.download_rounded,
+              l10n: l10n,
+            ),
+          ],
         );
     }
   }
 
-  String _formatSize(int bytes) {
+  String _fmt(int bytes) {
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 }
 
-// ── Helper widgets ────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Upload tab  (local docs → Drive)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _UploadTab extends StatefulWidget {
+  final DriveService drive;
+  final DocsNotifier notifier;
+  final ScrollController scrollController;
+
+  const _UploadTab({
+    required this.drive,
+    required this.notifier,
+    required this.scrollController,
+  });
+
+  @override
+  State<_UploadTab> createState() => _UploadTabState();
+}
+
+class _UploadTabState extends State<_UploadTab>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  _LoadState _state = _LoadState.loaded;
+  final Set<String> _selected = {};
+  int _current = 0;
+  int _total = 0;
+
+  Future<void> _upload(List<Document> docs) async {
+    if (_selected.isEmpty) return;
+    final l10n = AppLocalizations.of(context)!;
+    final toUpload = docs.where((d) => _selected.contains(d.id)).toList();
+    setState(() {
+      _state = _LoadState.busy;
+      _current = 0;
+      _total = toUpload.length;
+    });
+
+    int uploaded = 0;
+    bool hadError = false;
+    for (final doc in toUpload) {
+      try {
+        setState(() => _current = uploaded + 1);
+        final absPath = await resolveDocPath(doc.filePath);
+        // Ensure the file name ends with .pdf
+        final fileName = doc.title.endsWith('.pdf')
+            ? doc.title
+            : '${doc.title}.pdf';
+        await widget.drive.uploadFile(absPath, fileName);
+        uploaded++;
+      } catch (_) {
+        hadError = true;
+      }
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _state = _LoadState.loaded;
+      _selected.clear();
+    });
+
+    final messenger = ScaffoldMessenger.of(context);
+    if (uploaded > 0) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(l10n.driveUploadDone(uploaded)),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+    if (hadError) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(l10n.driveErrorUpload),
+          backgroundColor: Colors.red.shade700,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
+  }
+
+  void _toggleAll(List<Document> docs) => setState(() {
+    if (_selected.length == docs.length) {
+      _selected.clear();
+    } else {
+      _selected.addAll(docs.map((d) => d.id));
+    }
+  });
+
+  void _toggle(Document doc) => setState(
+    () => _selected.contains(doc.id)
+        ? _selected.remove(doc.id)
+        : _selected.add(doc.id),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    final l10n = AppLocalizations.of(context)!;
+
+    // All local documents (both scanned and imported)
+    final docs = widget.notifier.all;
+
+    if (_state == _LoadState.busy) {
+      return _CenteredStatus(
+        text: l10n.driveUploading(_current, _total),
+        showSpinner: true,
+      );
+    }
+
+    if (docs.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.folder_open_outlined,
+                size: 56,
+                color: Colors.grey[400],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                l10n.filesEmpty,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: AppColors.textSecondary),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+          child: Text(
+            l10n.driveUploadSheetSubtitle,
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            controller: widget.scrollController,
+            itemCount: docs.length,
+            itemBuilder: (_, i) {
+              final doc = docs[i];
+              return CheckboxListTile(
+                value: _selected.contains(doc.id),
+                onChanged: (_) => _toggle(doc),
+                title: Text(
+                  doc.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: Text(
+                  doc.isImported ? 'Imported' : 'Scanned',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                secondary: Icon(
+                  doc.isImported
+                      ? Icons.picture_as_pdf_outlined
+                      : Icons.document_scanner_outlined,
+                  color: const Color(0xFF4285F4),
+                ),
+                controlAffinity: ListTileControlAffinity.leading,
+              );
+            },
+          ),
+        ),
+        const Divider(height: 1),
+        _ActionBar(
+          selectedCount: _selected.length,
+          totalCount: docs.length,
+          onToggleAll: () => _toggleAll(docs),
+          onAction: _selected.isEmpty ? null : () => _upload(docs),
+          actionLabel: _selected.isEmpty
+              ? l10n.driveUploadButton
+              : '${l10n.driveUploadButton} (${_selected.length})',
+          actionIcon: Icons.upload_rounded,
+          l10n: l10n,
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared helper widgets
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _CenteredStatus extends StatelessWidget {
   final String text;
@@ -400,14 +655,18 @@ class _ActionBar extends StatelessWidget {
   final int selectedCount;
   final int totalCount;
   final VoidCallback onToggleAll;
-  final VoidCallback? onImport;
+  final VoidCallback? onAction;
+  final String actionLabel;
+  final IconData actionIcon;
   final AppLocalizations l10n;
 
   const _ActionBar({
     required this.selectedCount,
     required this.totalCount,
     required this.onToggleAll,
-    required this.onImport,
+    required this.onAction,
+    required this.actionLabel,
+    required this.actionIcon,
     required this.l10n,
   });
 
@@ -428,13 +687,9 @@ class _ActionBar extends StatelessWidget {
             ),
             const Spacer(),
             FilledButton.icon(
-              onPressed: onImport,
-              icon: const Icon(Icons.download_rounded, size: 18),
-              label: Text(
-                selectedCount > 0
-                    ? '${l10n.driveImportButton} ($selectedCount)'
-                    : l10n.driveImportButton,
-              ),
+              onPressed: onAction,
+              icon: Icon(actionIcon, size: 18),
+              label: Text(actionLabel),
             ),
           ],
         ),

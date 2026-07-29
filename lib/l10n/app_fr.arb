@@ -41,6 +41,25 @@
   "driveSelectAll": "Tout sélectionner",
   "driveDeselectAll": "Tout désélectionner",
   "driveSignOut": "Se déconnecter",
+
+  "driveUploadSheetSubtitle": "Sélectionnez des documents locaux à envoyer sur Drive",
+  "driveUploading": "Envoi de {current} sur {total}…",
+  "@driveUploading": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "driveUploadDone": "{count, plural, =1{1 fichier envoyé} other{{count} fichiers envoyés}}",
+  "@driveUploadDone": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "driveUploadButton": "Envoyer la sélection",
+  "driveErrorUpload": "Certains fichiers n'ont pas pu être envoyés.",
+  "driveTabDownload": "Depuis Drive",
+  "driveTabUpload": "Vers Drive",
   "filesEmptySubtitle": "Commencez à ajouter des PDF pour constituer votre bibliothèque !",
 
   "recentTitle": "Récents",
