@@ -22,6 +22,12 @@ class DriveService {
   DriveService._();
 
   final _googleSignIn = GoogleSignIn(
+    // Android OAuth Client ID registered in Google Cloud Console
+    // (package: com.hifivetech.smartpdf, type: Android).
+    // On Android, google_sign_in uses this to identify the OAuth client.
+    // On iOS, it reads the client ID from GoogleService-Info.plist instead.
+    clientId:
+        '539220795966-eqt8bd2psu00kfmlk6cf9nr7in0d7g2l.apps.googleusercontent.com',
     scopes: [drive.DriveApi.driveReadonlyScope],
   );
 
@@ -68,11 +74,13 @@ class DriveService {
       );
       for (final f in result.files ?? []) {
         if (f.id != null && f.name != null) {
-          files.add(DriveFile(
-            id: f.id!,
-            name: f.name!,
-            size: f.size != null ? int.tryParse(f.size!) : null,
-          ));
+          files.add(
+            DriveFile(
+              id: f.id!,
+              name: f.name!,
+              size: f.size != null ? int.tryParse(f.size!) : null,
+            ),
+          );
         }
       }
       pageToken = result.nextPageToken;
@@ -86,11 +94,13 @@ class DriveService {
   Future<String> downloadFile(DriveFile file) async {
     final api = await _api();
 
-    final media = await api.files.get(
-      file.id,
-      downloadOptions: drive.DownloadOptions.fullMedia,
-      $fields: 'id',
-    ) as drive.Media;
+    final media =
+        await api.files.get(
+              file.id,
+              downloadOptions: drive.DownloadOptions.fullMedia,
+              $fields: 'id',
+            )
+            as drive.Media;
 
     final tmp = await getTemporaryDirectory();
     final safeName = file.name.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_');

@@ -2,8 +2,6 @@ import java.util.Properties
 
 plugins {
     id("com.android.application")
-    // TODO: After adding google-services.json, uncomment the next line:
-    // id("com.google.gms.google-services")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
