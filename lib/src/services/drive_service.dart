@@ -22,12 +22,6 @@ class DriveService {
   DriveService._();
 
   final _googleSignIn = GoogleSignIn(
-    // Android OAuth Client ID registered in Google Cloud Console
-    // (package: com.hifivetech.smartpdf, type: Android).
-    // On Android, google_sign_in uses this to identify the OAuth client.
-    // On iOS, it reads the client ID from GoogleService-Info.plist instead.
-    clientId:
-        '539220795966-eqt8bd2psu00kfmlk6cf9nr7in0d7g2l.apps.googleusercontent.com',
     scopes: [drive.DriveApi.driveReadonlyScope],
   );
 
