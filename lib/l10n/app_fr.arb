@@ -92,6 +92,10 @@
   "languageSheetTitle": "Choisir la langue",
   "languageEnglish": "Anglais",
   "languageFrench": "Français",
+  "languageSpanish": "Espagnol",
+  "languageArabic": "Arabe",
+  "languagePortuguese": "Portugais",
+  "languageHindi": "Hindi",
 
   "themeSheetTitle": "Choisir le thème",
   "themeLight": "Clair",

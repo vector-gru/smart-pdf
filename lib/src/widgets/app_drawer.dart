@@ -131,6 +131,42 @@ class _AppDrawerState extends State<AppDrawer> {
                 Navigator.pop(sheetContext);
               },
             ),
+            _LocaleTile(
+              label: l10n.languageSpanish,
+              locale: const Locale('es'),
+              selected: current.languageCode == 'es',
+              onTap: () {
+                widget.localeProvider.setLocale(const Locale('es'));
+                Navigator.pop(sheetContext);
+              },
+            ),
+            _LocaleTile(
+              label: l10n.languageArabic,
+              locale: const Locale('ar'),
+              selected: current.languageCode == 'ar',
+              onTap: () {
+                widget.localeProvider.setLocale(const Locale('ar'));
+                Navigator.pop(sheetContext);
+              },
+            ),
+            _LocaleTile(
+              label: l10n.languagePortuguese,
+              locale: const Locale('pt'),
+              selected: current.languageCode == 'pt',
+              onTap: () {
+                widget.localeProvider.setLocale(const Locale('pt'));
+                Navigator.pop(sheetContext);
+              },
+            ),
+            _LocaleTile(
+              label: l10n.languageHindi,
+              locale: const Locale('hi'),
+              selected: current.languageCode == 'hi',
+              onTap: () {
+                widget.localeProvider.setLocale(const Locale('hi'));
+                Navigator.pop(sheetContext);
+              },
+            ),
             const SizedBox(height: 8),
           ],
         ),

@@ -1,0 +1,192 @@
+{
+  "@@locale": "hi",
+
+  "appTitle": "SmartPDF",
+  "navHome": "होम",
+  "navFiles": "फ़ाइलें",
+  "navRecent": "हाल के",
+  "navFavourite": "पसंदीदा",
+
+  "homeSearchHint": "दस्तावेज़ खोजें…",
+  "homeEmpty": "कोई दस्तावेज़ नहीं",
+  "homeEmptySubtitle": "स्कैन या आयात करने के लिए नीचे दिए बटन पर टैप करें",
+
+  "filesTitle": "फ़ाइलें",
+  "filesBrowseMore": "अधिक फ़ाइलें देखें",
+  "filesSyncDrive": "Google Drive से सिंक करें",
+  "filesEmpty": "कोई फ़ाइल नहीं",
+  "filesEmptySubtitle": "अपनी डिजिटल लाइब्रेरी बनाने के लिए PDF फ़ाइलें जोड़ना शुरू करें!",
+
+  "driveSheetTitle": "Google Drive",
+  "driveSheetSubtitle": "SmartPDF में आयात करने के लिए PDF फ़ाइलें चुनें",
+  "driveSigningIn": "साइन इन हो रहा है…",
+  "driveLoading": "फ़ाइलें लोड हो रही हैं…",
+  "driveEmpty": "आपके Drive में कोई PDF फ़ाइल नहीं मिली।",
+  "driveImporting": "{total} में से {current} आयात हो रहा है…",
+  "@driveImporting": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "driveImportDone": "{count, plural, =1{1 फ़ाइल आयात हुई} other{{count} फ़ाइलें आयात हुईं}}",
+  "@driveImportDone": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "driveImportButton": "चयनित आयात करें",
+  "driveErrorSignIn": "Google में साइन इन नहीं हो सका। कृपया पुनः प्रयास करें।",
+  "driveErrorLoad": "Drive फ़ाइलें लोड करने में विफल। कृपया पुनः प्रयास करें।",
+  "driveErrorImport": "कुछ फ़ाइलें आयात नहीं हो सकीं।",
+  "driveSelectAll": "सभी चुनें",
+  "driveDeselectAll": "सभी हटाएँ",
+  "driveSignOut": "साइन आउट",
+
+  "driveUploadSheetSubtitle": "Drive पर अपलोड करने के लिए स्थानीय दस्तावेज़ चुनें",
+  "driveUploading": "{total} में से {current} अपलोड हो रहा है…",
+  "@driveUploading": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "driveUploadDone": "{count, plural, =1{1 फ़ाइल अपलोड हुई} other{{count} फ़ाइलें अपलोड हुईं}}",
+  "@driveUploadDone": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "driveUploadButton": "चयनित अपलोड करें",
+  "driveErrorUpload": "कुछ फ़ाइलें अपलोड नहीं हो सकीं।",
+  "driveTabDownload": "Drive से",
+  "driveTabUpload": "Drive पर",
+
+  "recentTitle": "हाल के",
+  "recentEmpty": "कोई हालिया दस्तावेज़ नहीं",
+
+  "favouritesTitle": "पसंदीदा",
+  "favouritesEmpty": "अभी कोई पसंदीदा नहीं",
+  "favouritesEmptySubtitle": "यहाँ देखने के लिए किसी दस्तावेज़ पर स्टार लगाएँ",
+
+  "viewerTitle": "व्यूअर",
+  "viewerSearchHint": "दस्तावेज़ में खोजें…",
+  "viewerSearchNoResults": "कोई परिणाम नहीं",
+  "viewerSearchOf": "{total} में से {current}",
+  "@viewerSearchOf": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+
+  "drawerSettings": "सेटिंग्स",
+  "drawerTheme": "थीम",
+  "drawerRateApp": "ऐप रेट करें",
+  "drawerLanguage": "भाषा",
+  "drawerShareApp": "यह ऐप शेयर करें",
+  "drawerFeedback": "फ़ीडबैक और सोशल मीडिया",
+  "drawerPrivacy": "गोपनीयता नीति",
+  "drawerLicenses": "ओपन सोर्स लाइसेंस",
+
+  "languageSheetTitle": "भाषा चुनें",
+  "languageEnglish": "अंग्रेज़ी",
+  "languageFrench": "फ्रेंच",
+  "languageSpanish": "स्पेनिश",
+  "languageArabic": "अरबी",
+  "languagePortuguese": "पुर्तगाली",
+  "languageHindi": "हिन्दी",
+
+  "themeSheetTitle": "थीम चुनें",
+  "themeLight": "लाइट",
+  "themeDark": "डार्क",
+  "themeDevice": "डिवाइस थीम",
+
+  "settingsAutoCrop": "ऑटो-क्रॉप",
+  "settingsAutoCropSubtitle": "कैप्चर के समय दस्तावेज़ की सीमाएँ स्वचालित रूप से पहचानें और क्रॉप करें",
+
+  "docActionDelete": "हटाएँ",
+  "docActionRemove": "निकालें",
+  "docActionCancel": "रद्द करें",
+  "docActionRename": "नाम बदलें",
+  "docActionSave": "सहेजें",
+  "docActionPrint": "प्रिंट करें",
+  "docActionShare": "शेयर करें",
+  "docActionEdit": "संपादित करें",
+  "docDeleteTitle": "दस्तावेज़ हटाएँ?",
+  "docRemoveTitle": "दस्तावेज़ निकालें?",
+  "docDeleteContent": "क्या आप वाकई \"{title}\" हटाना चाहते हैं?",
+  "@docDeleteContent": {
+    "placeholders": {
+      "title": { "type": "String" }
+    }
+  },
+  "docRemoveContent": "इससे \"{title}\" को SmartPDF से निकाल दिया जाएगा। आपके डिवाइस की मूल फ़ाइल प्रभावित नहीं होगी।",
+  "@docRemoveContent": {
+    "placeholders": {
+      "title": { "type": "String" }
+    }
+  },
+  "docRenameTitle": "दस्तावेज़ का नाम बदलें",
+  "docRenameLabel": "नाम",
+  "docFavAdded": "पसंदीदा में जोड़ा गया",
+  "docFavRemoved": "पसंदीदा से हटाया गया",
+
+  "scannerSave": "सहेजें",
+  "scannerAddPage": "पृष्ठ जोड़ें",
+  "scannerCrop": "क्रॉप करें",
+  "scannerColor": "रंग",
+  "scannerRotate": "घुमाएँ",
+  "scannerReorder": "क्रम बदलें",
+  "scannerDelete": "हटाएँ",
+  "scannerNoPages": "अभी कोई पृष्ठ नहीं।\nशुरू करने के लिए पृष्ठ जोड़ें।",
+  "scannerPageOf": "पृष्ठ {current} / {total}",
+  "@scannerPageOf": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "scannerTakePhoto": "एक और फ़ोटो लें",
+  "scannerSelectPhotos": "फ़ोटो से चुनें",
+  "scannerDeletePageTitle": "पृष्ठ हटाएँ?",
+  "scannerDeletePageContent": "क्या आप वाकई पृष्ठ {page} हटाना चाहते हैं?",
+  "@scannerDeletePageContent": {
+    "placeholders": {
+      "page": { "type": "int" }
+    }
+  },
+
+  "cropAdjustBorders": "सीमाएँ समायोजित करें",
+  "cropAuto": "ऑटो",
+  "cropReset": "रीसेट",
+  "cropRotate": "घुमाएँ",
+  "cropPreview": "पूर्वावलोकन",
+  "cropEdit": "संपादित करें",
+  "cropDone": "हो गया",
+  "cropPreviewLabel": "यही सहेजा जाएगा",
+  "cropPreviewBadge": "पूर्वावलोकन",
+
+  "reorderPageTitle": "क्रम बदलें",
+
+  "filterApplyToAll": "सभी पृष्ठों पर लागू करें",
+  "filterApply": "लागू करें",
+
+  "feedbackTitle": "संपर्क करें",
+  "feedbackSubtitle": "फ़ीडबैक भेजें या हमें सोशल मीडिया पर फॉलो करें",
+
+  "privacyPolicyTitle": "गोपनीयता नीति",
+  "licensesTitle": "ओपन सोर्स लाइसेंस",
+  "licensesSmartPdf": "SmartPDF लाइसेंस",
+  "licensesThirdParty": "थर्ड-पार्टी पैकेज",
+  "licensesThirdPartyDesc": "यह ऐप ओपन-सोर्स Flutter पैकेज का उपयोग करता है। उनके लाइसेंस नीचे देखे जा सकते हैं।",
+  "licensesViewAll": "सभी पैकेज लाइसेंस देखें",
+  "licensesLearnMore": "ओपन सोर्स लाइसेंस के बारे में अधिक जानें",
+
+  "couldNotOpenPdf": "PDF नहीं खुल सका:\n{error}",
+  "@couldNotOpenPdf": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  }
+}

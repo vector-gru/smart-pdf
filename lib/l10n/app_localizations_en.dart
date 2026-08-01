@@ -196,6 +196,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageFrench => 'French';
 
   @override
+  String get languageSpanish => 'Spanish';
+
+  @override
+  String get languageArabic => 'Arabic';
+
+  @override
+  String get languagePortuguese => 'Portuguese';
+
+  @override
+  String get languageHindi => 'Hindi';
+
+  @override
   String get themeSheetTitle => 'Select theme';
 
   @override

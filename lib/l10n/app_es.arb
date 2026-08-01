@@ -1,0 +1,192 @@
+{
+  "@@locale": "es",
+
+  "appTitle": "SmartPDF",
+  "navHome": "Inicio",
+  "navFiles": "Archivos",
+  "navRecent": "Recientes",
+  "navFavourite": "Favoritos",
+
+  "homeSearchHint": "Buscar documentos…",
+  "homeEmpty": "Sin documentos",
+  "homeEmptySubtitle": "Toca el botón de abajo para escanear o importar",
+
+  "filesTitle": "Archivos",
+  "filesBrowseMore": "Ver más archivos",
+  "filesSyncDrive": "Sincronizar con Google Drive",
+  "filesEmpty": "Sin archivos",
+  "filesEmptySubtitle": "¡Empieza a agregar archivos PDF para construir tu biblioteca digital!",
+
+  "driveSheetTitle": "Google Drive",
+  "driveSheetSubtitle": "Selecciona los archivos PDF para importar en SmartPDF",
+  "driveSigningIn": "Iniciando sesión…",
+  "driveLoading": "Cargando archivos…",
+  "driveEmpty": "No se encontraron archivos PDF en tu Drive.",
+  "driveImporting": "Importando {current} de {total}…",
+  "@driveImporting": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "driveImportDone": "{count, plural, =1{1 archivo importado} other{{count} archivos importados}}",
+  "@driveImportDone": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "driveImportButton": "Importar selección",
+  "driveErrorSignIn": "No se pudo iniciar sesión en Google. Inténtalo de nuevo.",
+  "driveErrorLoad": "Error al cargar los archivos de Drive. Inténtalo de nuevo.",
+  "driveErrorImport": "Algunos archivos no pudieron importarse.",
+  "driveSelectAll": "Seleccionar todo",
+  "driveDeselectAll": "Deseleccionar todo",
+  "driveSignOut": "Cerrar sesión",
+
+  "driveUploadSheetSubtitle": "Selecciona documentos locales para subir a Drive",
+  "driveUploading": "Subiendo {current} de {total}…",
+  "@driveUploading": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "driveUploadDone": "{count, plural, =1{1 archivo subido} other{{count} archivos subidos}}",
+  "@driveUploadDone": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "driveUploadButton": "Subir selección",
+  "driveErrorUpload": "Algunos archivos no pudieron subirse.",
+  "driveTabDownload": "Desde Drive",
+  "driveTabUpload": "A Drive",
+
+  "recentTitle": "Recientes",
+  "recentEmpty": "Sin documentos recientes",
+
+  "favouritesTitle": "Favoritos",
+  "favouritesEmpty": "Sin favoritos aún",
+  "favouritesEmptySubtitle": "Marca un documento con estrella para verlo aquí",
+
+  "viewerTitle": "Visor",
+  "viewerSearchHint": "Buscar en el documento…",
+  "viewerSearchNoResults": "Sin resultados",
+  "viewerSearchOf": "{current} de {total}",
+  "@viewerSearchOf": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+
+  "drawerSettings": "Ajustes",
+  "drawerTheme": "Tema",
+  "drawerRateApp": "Valorar la app",
+  "drawerLanguage": "Idioma",
+  "drawerShareApp": "Compartir esta app",
+  "drawerFeedback": "Comentarios y redes sociales",
+  "drawerPrivacy": "Política de privacidad",
+  "drawerLicenses": "Licencias de código abierto",
+
+  "languageSheetTitle": "Seleccionar idioma",
+  "languageEnglish": "Inglés",
+  "languageFrench": "Francés",
+  "languageSpanish": "Español",
+  "languageArabic": "Árabe",
+  "languagePortuguese": "Portugués",
+  "languageHindi": "Hindi",
+
+  "themeSheetTitle": "Seleccionar tema",
+  "themeLight": "Claro",
+  "themeDark": "Oscuro",
+  "themeDevice": "Tema del dispositivo",
+
+  "settingsAutoCrop": "Recorte automático",
+  "settingsAutoCropSubtitle": "Detectar y recortar automáticamente los bordes del documento al capturar",
+
+  "docActionDelete": "Eliminar",
+  "docActionRemove": "Quitar",
+  "docActionCancel": "Cancelar",
+  "docActionRename": "Renombrar",
+  "docActionSave": "Guardar",
+  "docActionPrint": "Imprimir",
+  "docActionShare": "Compartir",
+  "docActionEdit": "Editar",
+  "docDeleteTitle": "¿Eliminar documento?",
+  "docRemoveTitle": "¿Quitar documento?",
+  "docDeleteContent": "¿Seguro que quieres eliminar \"{title}\"?",
+  "@docDeleteContent": {
+    "placeholders": {
+      "title": { "type": "String" }
+    }
+  },
+  "docRemoveContent": "Esto quitará \"{title}\" de SmartPDF. El archivo original en tu dispositivo no se verá afectado.",
+  "@docRemoveContent": {
+    "placeholders": {
+      "title": { "type": "String" }
+    }
+  },
+  "docRenameTitle": "Renombrar documento",
+  "docRenameLabel": "Nombre",
+  "docFavAdded": "Añadido a favoritos",
+  "docFavRemoved": "Eliminado de favoritos",
+
+  "scannerSave": "Guardar",
+  "scannerAddPage": "Añadir página",
+  "scannerCrop": "Recortar",
+  "scannerColor": "Color",
+  "scannerRotate": "Rotar",
+  "scannerReorder": "Reordenar",
+  "scannerDelete": "Eliminar",
+  "scannerNoPages": "Sin páginas aún.\nUsa Añadir página para comenzar.",
+  "scannerPageOf": "Página {current} de {total}",
+  "@scannerPageOf": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "scannerTakePhoto": "Tomar otra foto",
+  "scannerSelectPhotos": "Seleccionar de fotos",
+  "scannerDeletePageTitle": "¿Eliminar página?",
+  "scannerDeletePageContent": "¿Seguro que quieres eliminar la página {page}?",
+  "@scannerDeletePageContent": {
+    "placeholders": {
+      "page": { "type": "int" }
+    }
+  },
+
+  "cropAdjustBorders": "Ajustar bordes",
+  "cropAuto": "Auto",
+  "cropReset": "Restablecer",
+  "cropRotate": "Rotar",
+  "cropPreview": "Vista previa",
+  "cropEdit": "Editar",
+  "cropDone": "Listo",
+  "cropPreviewLabel": "Esto es lo que se guardará",
+  "cropPreviewBadge": "VISTA PREVIA",
+
+  "reorderPageTitle": "Reordenar",
+
+  "filterApplyToAll": "Aplicar a todas las páginas",
+  "filterApply": "Aplicar",
+
+  "feedbackTitle": "Contáctanos",
+  "feedbackSubtitle": "Envía comentarios o síguenos en redes sociales",
+
+  "privacyPolicyTitle": "Política de privacidad",
+  "licensesTitle": "Licencias de código abierto",
+  "licensesSmartPdf": "Licencia SmartPDF",
+  "licensesThirdParty": "Paquetes de terceros",
+  "licensesThirdPartyDesc": "Esta app usa paquetes Flutter de código abierto. Sus licencias se pueden ver a continuación.",
+  "licensesViewAll": "Ver todas las licencias de paquetes",
+  "licensesLearnMore": "Más información sobre licencias de código abierto",
+
+  "couldNotOpenPdf": "No se pudo abrir el PDF:\n{error}",
+  "@couldNotOpenPdf": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  }
+}

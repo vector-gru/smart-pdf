@@ -1,0 +1,192 @@
+{
+  "@@locale": "ar",
+
+  "appTitle": "SmartPDF",
+  "navHome": "الرئيسية",
+  "navFiles": "الملفات",
+  "navRecent": "الأخيرة",
+  "navFavourite": "المفضلة",
+
+  "homeSearchHint": "البحث في المستندات…",
+  "homeEmpty": "لا توجد مستندات",
+  "homeEmptySubtitle": "اضغط على الزر أدناه للمسح أو الاستيراد",
+
+  "filesTitle": "الملفات",
+  "filesBrowseMore": "تصفح المزيد من الملفات",
+  "filesSyncDrive": "مزامنة مع Google Drive",
+  "filesEmpty": "لا توجد ملفات",
+  "filesEmptySubtitle": "ابدأ بإضافة ملفات PDF لبناء مكتبتك الرقمية!",
+
+  "driveSheetTitle": "Google Drive",
+  "driveSheetSubtitle": "حدد ملفات PDF لاستيرادها إلى SmartPDF",
+  "driveSigningIn": "جارٍ تسجيل الدخول…",
+  "driveLoading": "جارٍ تحميل الملفات…",
+  "driveEmpty": "لم يتم العثور على ملفات PDF في Drive الخاص بك.",
+  "driveImporting": "جارٍ استيراد {current} من {total}…",
+  "@driveImporting": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "driveImportDone": "{count, plural, =1{تم استيراد ملف واحد} other{تم استيراد {count} ملفات}}",
+  "@driveImportDone": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "driveImportButton": "استيراد المحدد",
+  "driveErrorSignIn": "تعذّر تسجيل الدخول إلى Google. يرجى المحاولة مرة أخرى.",
+  "driveErrorLoad": "فشل تحميل ملفات Drive. يرجى المحاولة مرة أخرى.",
+  "driveErrorImport": "تعذّر استيراد بعض الملفات.",
+  "driveSelectAll": "تحديد الكل",
+  "driveDeselectAll": "إلغاء تحديد الكل",
+  "driveSignOut": "تسجيل الخروج",
+
+  "driveUploadSheetSubtitle": "حدد المستندات المحلية لرفعها إلى Drive",
+  "driveUploading": "جارٍ رفع {current} من {total}…",
+  "@driveUploading": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "driveUploadDone": "{count, plural, =1{تم رفع ملف واحد} other{تم رفع {count} ملفات}}",
+  "@driveUploadDone": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "driveUploadButton": "رفع المحدد",
+  "driveErrorUpload": "تعذّر رفع بعض الملفات.",
+  "driveTabDownload": "من Drive",
+  "driveTabUpload": "إلى Drive",
+
+  "recentTitle": "الأخيرة",
+  "recentEmpty": "لا توجد مستندات حديثة",
+
+  "favouritesTitle": "المفضلة",
+  "favouritesEmpty": "لا توجد مفضلات بعد",
+  "favouritesEmptySubtitle": "ضع نجمة على مستند لرؤيته هنا",
+
+  "viewerTitle": "العارض",
+  "viewerSearchHint": "البحث في المستند…",
+  "viewerSearchNoResults": "لا توجد نتائج",
+  "viewerSearchOf": "{current} من {total}",
+  "@viewerSearchOf": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+
+  "drawerSettings": "الإعدادات",
+  "drawerTheme": "المظهر",
+  "drawerRateApp": "تقييم التطبيق",
+  "drawerLanguage": "اللغة",
+  "drawerShareApp": "مشاركة هذا التطبيق",
+  "drawerFeedback": "الملاحظات والتواصل الاجتماعي",
+  "drawerPrivacy": "سياسة الخصوصية",
+  "drawerLicenses": "تراخيص المصدر المفتوح",
+
+  "languageSheetTitle": "اختر اللغة",
+  "languageEnglish": "الإنجليزية",
+  "languageFrench": "الفرنسية",
+  "languageSpanish": "الإسبانية",
+  "languageArabic": "العربية",
+  "languagePortuguese": "البرتغالية",
+  "languageHindi": "الهندية",
+
+  "themeSheetTitle": "اختر المظهر",
+  "themeLight": "فاتح",
+  "themeDark": "داكن",
+  "themeDevice": "مظهر الجهاز",
+
+  "settingsAutoCrop": "القص التلقائي",
+  "settingsAutoCropSubtitle": "اكتشاف حواف المستند وقصها تلقائيًا عند التقاطها",
+
+  "docActionDelete": "حذف",
+  "docActionRemove": "إزالة",
+  "docActionCancel": "إلغاء",
+  "docActionRename": "إعادة تسمية",
+  "docActionSave": "حفظ",
+  "docActionPrint": "طباعة",
+  "docActionShare": "مشاركة",
+  "docActionEdit": "تعديل",
+  "docDeleteTitle": "حذف المستند؟",
+  "docRemoveTitle": "إزالة المستند؟",
+  "docDeleteContent": "هل أنت متأكد أنك تريد حذف \"{title}\"؟",
+  "@docDeleteContent": {
+    "placeholders": {
+      "title": { "type": "String" }
+    }
+  },
+  "docRemoveContent": "سيؤدي هذا إلى إزالة \"{title}\" من SmartPDF. لن يتأثر الملف الأصلي على جهازك.",
+  "@docRemoveContent": {
+    "placeholders": {
+      "title": { "type": "String" }
+    }
+  },
+  "docRenameTitle": "إعادة تسمية المستند",
+  "docRenameLabel": "الاسم",
+  "docFavAdded": "تمت الإضافة إلى المفضلة",
+  "docFavRemoved": "تمت الإزالة من المفضلة",
+
+  "scannerSave": "حفظ",
+  "scannerAddPage": "إضافة صفحة",
+  "scannerCrop": "قص",
+  "scannerColor": "اللون",
+  "scannerRotate": "تدوير",
+  "scannerReorder": "إعادة الترتيب",
+  "scannerDelete": "حذف",
+  "scannerNoPages": "لا توجد صفحات بعد.\nاستخدم إضافة صفحة للبدء.",
+  "scannerPageOf": "صفحة {current} من {total}",
+  "@scannerPageOf": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "scannerTakePhoto": "التقاط صورة أخرى",
+  "scannerSelectPhotos": "اختر من الصور",
+  "scannerDeletePageTitle": "حذف الصفحة؟",
+  "scannerDeletePageContent": "هل أنت متأكد أنك تريد حذف الصفحة {page}؟",
+  "@scannerDeletePageContent": {
+    "placeholders": {
+      "page": { "type": "int" }
+    }
+  },
+
+  "cropAdjustBorders": "ضبط الحدود",
+  "cropAuto": "تلقائي",
+  "cropReset": "إعادة تعيين",
+  "cropRotate": "تدوير",
+  "cropPreview": "معاينة",
+  "cropEdit": "تعديل",
+  "cropDone": "تم",
+  "cropPreviewLabel": "هذا ما سيتم حفظه",
+  "cropPreviewBadge": "معاينة",
+
+  "reorderPageTitle": "إعادة الترتيب",
+
+  "filterApplyToAll": "تطبيق على جميع الصفحات",
+  "filterApply": "تطبيق",
+
+  "feedbackTitle": "تواصل معنا",
+  "feedbackSubtitle": "أرسل ملاحظاتك أو تابعنا على وسائل التواصل الاجتماعي",
+
+  "privacyPolicyTitle": "سياسة الخصوصية",
+  "licensesTitle": "تراخيص المصدر المفتوح",
+  "licensesSmartPdf": "ترخيص SmartPDF",
+  "licensesThirdParty": "الحزم الخارجية",
+  "licensesThirdPartyDesc": "يستخدم هذا التطبيق حزم Flutter مفتوحة المصدر. يمكن الاطلاع على تراخيصها أدناه.",
+  "licensesViewAll": "عرض جميع تراخيص الحزم",
+  "licensesLearnMore": "تعرّف على المزيد حول تراخيص المصدر المفتوح",
+
+  "couldNotOpenPdf": "تعذّر فتح ملف PDF:\n{error}",
+  "@couldNotOpenPdf": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  }
+}

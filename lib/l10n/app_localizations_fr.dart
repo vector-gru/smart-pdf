@@ -202,6 +202,18 @@ class AppLocalizationsFr extends AppLocalizations {
   String get languageFrench => 'Français';
 
   @override
+  String get languageSpanish => 'Espagnol';
+
+  @override
+  String get languageArabic => 'Arabe';
+
+  @override
+  String get languagePortuguese => 'Portugais';
+
+  @override
+  String get languageHindi => 'Hindi';
+
+  @override
   String get themeSheetTitle => 'Choisir le thème';
 
   @override
