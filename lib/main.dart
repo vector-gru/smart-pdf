@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'package:smart_pdf/l10n/app_localizations.dart';
@@ -12,6 +13,7 @@ import 'src/app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   final db = AppDatabase();
   final settingsProvider = await SettingsProvider.load();
 
