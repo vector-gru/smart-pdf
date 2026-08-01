@@ -12,6 +12,7 @@ import '../widgets/camera_capture_page.dart';
 import '../widgets/color_filter_sheet.dart';
 import 'crop_page.dart';
 import 'reorder_page.dart';
+import 'smart_edit_page.dart';
 
 class ScannerResult {
   final String title;
@@ -328,6 +329,11 @@ class _ScannerPageState extends State<ScannerPage> {
         onTap: _reorderPages,
       ),
       _ActionItem(
+        icon: Icons.edit_note,
+        label: 'Smart Edit',
+        onTap: _smartEditCurrent,
+      ),
+      _ActionItem(
         icon: Icons.delete_outline,
         label: l10n.scannerDelete,
         onTap: _deleteCurrent,
@@ -621,6 +627,26 @@ class _ScannerPageState extends State<ScannerPage> {
           ..clear()
           ..addAll(result),
       );
+    }
+  }
+
+  void _smartEditCurrent() async {
+    if (_images.isEmpty) return;
+    final path = _images[_currentPage];
+    final modified = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => SmartEditPage(
+          imagePath: path,
+          pageNumber: _currentPage + 1,
+          totalPages: _images.length,
+        ),
+      ),
+    );
+    if (modified == true) {
+      // Evict the cached image so ScannerPage's PageView shows the new pixels
+      await FileImage(File(path)).evict();
+      _bumpVersion(path);
+      setState(() {});
     }
   }
 

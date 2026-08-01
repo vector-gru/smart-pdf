@@ -111,7 +111,8 @@ class AppConstants {
   static const double cropAppBarPaddingH = 4.0;
   static const double cropAppBarPaddingV = 4.0;
   static const double cropAppBarTitleFontSize = 18.0;
-  static const double cropAppBarTitleFontWeight = 600; // unused at runtime, doc only
+  static const double cropAppBarTitleFontWeight =
+      600; // unused at runtime, doc only
   static const double cropPreviewBadgePaddingH = 10.0;
   static const double cropPreviewBadgePaddingV = 4.0;
   static const double cropPreviewBadgeRadius = 12.0;
@@ -165,6 +166,24 @@ class AppConstants {
   static const double viewerSearchCountFontSize = 12.0;
   static const double viewerSearchActionIconSize = 20.0;
   static const double viewerSearchActionPaddingH = 4.0;
+
+  // Smart Edit overlay
+  static const double smartEditMinHitWidth = 16.0;
+  static const double smartEditMinHitHeight = 12.0;
+  static const double smartEditHitRadius = 3.0;
+  static const double smartEditSelectionBorderWidth = 1.5;
+  static const double smartEditLoadingDimAlpha = 0.55;
+  static const double smartEditLoadingFontSize = 14.0;
+  static const double smartEditPopupWidth = 280.0;
+  static const double smartEditPopupHeight = 160.0;
+  static const double smartEditPopupElevation = 8.0;
+  static const double smartEditPopupRadius = 12.0;
+  static const double smartEditPopupPadding = 12.0;
+  static const double smartEditPopupHeaderIconSize = 18.0;
+  static const double smartEditPopupHeaderFontSize = 14.0;
+  static const double smartEditPopupHintFontSize = 11.5;
+  static const double smartEditPopupFieldFontSize = 14.0;
+  static const double smartEditPopupActionIconSize = 16.0;
   // Feedback sheet
   static const double feedbackHandleWidth = 40.0;
   static const double feedbackHandleHeight = 4.0;

@@ -1,0 +1,13 @@
+/// Central place for API keys used by the app.
+///
+/// SETUP: Copy this file to api_keys.dart and replace the placeholder values.
+///   cp lib/src/constants/api_keys.dart.template lib/src/constants/api_keys.dart
+///
+/// api_keys.dart is git-ignored — never commit real keys.
+class ApiKeys {
+  ApiKeys._();
+
+  /// Google Gemini API key (AI Studio — https://aistudio.google.com/apikey).
+  /// Used by [OcrService] for image-based OCR via Gemini Flash.
+  static const String gemini = 'YOUR_GEMINI_API_KEY_HERE';
+}

@@ -15,4 +15,9 @@ class AppColors {
   static const Color iconAction = Color(0xFF616161);
   static const Color navUnselected = Color(0xFF9E9E9E);
   static const Color fabDivider = Color(0x60FFFFFF);
+
+  // Smart Edit overlay colours
+  static const Color smartEditHover = Color(0x0D2196F3); // blue  5 % alpha
+  static const Color smartEditSelection = Color(0x332196F3); // blue 20 % alpha
+  static const Color smartEditSelectionBorder = Color(0xFF2196F3);
 }

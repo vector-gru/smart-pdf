@@ -53,6 +53,7 @@ dependencies:
   package_info_plus: ^8.0.0
   shared_preferences: ^2.5.3
   receive_sharing_intent: 1.8.0
+  google_mlkit_text_recognition: ^0.16.0
   pdfrx: ^2.4.4
   drift: ^2.7.0
   sqlite3_flutter_libs: ^0.5.5
