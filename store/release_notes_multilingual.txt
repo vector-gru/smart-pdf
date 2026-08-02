@@ -1,29 +1,47 @@
-en-US
+<en-US>
 We're going global! SmartPDF now supports Spanish, Arabic, Portuguese, and Hindi — bringing the total to 6 languages.
 
 The app automatically uses your device language when supported. You can also switch languages anytime from the app drawer under Language.
 
-fr-FR
+Under the hood, this update also includes stability improvements and security hardening to keep your documents safe.
+</en-US>
+
+<fr-FR>
 SmartPDF devient international ! L'application prend désormais en charge l'espagnol, l'arabe, le portugais et le hindi — pour un total de 6 langues.
 
 L'application utilise automatiquement la langue de votre appareil si elle est prise en charge. Vous pouvez également changer de langue à tout moment depuis le menu latéral, sous Langue.
 
-es-ES
+En coulisses, cette mise à jour apporte également des améliorations de stabilité et un renforcement de la sécurité pour protéger vos documents.
+</fr-FR>
+
+<es-ES>
 ¡SmartPDF se vuelve global! La aplicación ahora es compatible con español, árabe, portugués e hindi, sumando un total de 6 idiomas.
 
 La app usa automáticamente el idioma de tu dispositivo si está disponible. También puedes cambiar de idioma en cualquier momento desde el menú lateral, en Idioma.
 
-ar
+Además, esta actualización incluye mejoras de estabilidad y refuerzos de seguridad para mantener tus documentos protegidos.
+</es-ES>
+
+<ar>
 SmartPDF يصبح عالمياً! يدعم التطبيق الآن الإسبانية والعربية والبرتغالية والهندية — ليصل المجموع إلى 6 لغات.
 
 يستخدم التطبيق تلقائياً لغة جهازك إذا كانت مدعومة. يمكنك أيضاً تغيير اللغة في أي وقت من القائمة الجانبية تحت اللغة.
 
-pt-BR
+يتضمن هذا التحديث أيضاً تحسينات في الاستقرار وتعزيزات أمنية للحفاظ على سلامة مستنداتك.
+</ar>
+
+<pt-BR>
 O SmartPDF vai global! O aplicativo agora suporta espanhol, árabe, português e hindi — totalizando 6 idiomas.
 
 O app usa automaticamente o idioma do seu dispositivo quando disponível. Você também pode trocar o idioma a qualquer momento pelo menu lateral, em Idioma.
 
-hi-IN
+Nos bastidores, esta atualização também traz melhorias de estabilidade e reforços de segurança para manter seus documentos protegidos.
+</pt-BR>
+
+<hi-IN>
 SmartPDF अब वैश्विक हो गया है! ऐप अब स्पेनिश, अरबी, पुर्तगाली और हिन्दी को सपोर्ट करता है — कुल 6 भाषाएँ।
 
 ऐप अपने आप आपके डिवाइस की भाषा का उपयोग करता है, अगर वह उपलब्ध हो। आप ऐप ड्रॉअर में जाकर भाषा के अंतर्गत कभी भी भाषा बदल सकते हैं।
+
+इस अपडेट में स्थिरता सुधार और सुरक्षा संवर्द्धन भी शामिल हैं, ताकि आपके दस्तावेज़ सुरक्षित रहें।
+</hi-IN>
