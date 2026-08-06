@@ -337,6 +337,7 @@ class _ScanFab extends StatelessWidget {
       final created = await db.createDocumentFromImages(
         result.title,
         result.images,
+        originals: result.originals,
       );
       await notifier.reload();
       final doc = await db.getDocumentById(created);

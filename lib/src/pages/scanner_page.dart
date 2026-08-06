@@ -17,7 +17,16 @@ import 'smart_edit_page.dart';
 class ScannerResult {
   final String title;
   final List<String> images;
-  ScannerResult({required this.title, required this.images});
+
+  /// Maps each working image path to its original (unfiltered) image path.
+  /// Used by the persistence layer to save a permanent original alongside
+  /// each working copy so colour filters can always be reverted.
+  final Map<String, String> originals;
+  ScannerResult({
+    required this.title,
+    required this.images,
+    this.originals = const {},
+  });
 }
 
 class ScannerPage extends StatefulWidget {
@@ -54,7 +63,21 @@ class _ScannerPageState extends State<ScannerPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       for (final path in List.of(_images)) {
         if (!_originals.containsKey(path)) {
-          _originals[path] = await _saveToTemp(path, prefix: '_orig_');
+          // When re-editing a saved document, a permanent original lives next
+          // to the working copy as `page_N_orig<ext>`.  Use that directly so
+          // "Default" always restores to the true unfiltered image.
+          final permanentOrig = _permanentOrigFor(path);
+          if (permanentOrig != null && await File(permanentOrig).exists()) {
+            // Copy the permanent original into a temp file so ScannerPage can
+            // safely overwrite it without touching the permanent backup.
+            _originals[path] = await _saveToTemp(
+              permanentOrig,
+              prefix: '_orig_',
+            );
+          } else {
+            // First-time open: the image itself is the original.
+            _originals[path] = await _saveToTemp(path, prefix: '_orig_');
+          }
         }
       }
     });
@@ -395,7 +418,13 @@ class _ScannerPageState extends State<ScannerPage> {
   void _saveAndReturn() {
     if (_editingTitle) _commitTitle();
     if (_images.isEmpty) return;
-    Navigator.of(context).pop(ScannerResult(title: _title, images: _images));
+    Navigator.of(context).pop(
+      ScannerResult(
+        title: _title,
+        images: _images,
+        originals: Map.unmodifiable(_originals),
+      ),
+    );
   }
 
   void _showAddPageSheet() {
@@ -473,6 +502,20 @@ class _ScannerPageState extends State<ScannerPage> {
     );
   }
 
+  /// Returns the path of the permanent original file stored alongside a
+  /// working page image, e.g. `page_1.jpg` → `page_1_orig.jpg`.
+  /// Returns null if the naming convention doesn't apply.
+  static String? _permanentOrigFor(String workingPath) {
+    final ext = p.extension(workingPath);
+    final withoutExt = workingPath.substring(
+      0,
+      workingPath.length - ext.length,
+    );
+    // Only treat files matching `page_N<ext>` as having a permanent original.
+    if (!p.basename(workingPath).startsWith('page_')) return null;
+    return '${withoutExt}_orig$ext';
+  }
+
   Future<String> _saveToTemp(String sourcePath, {String prefix = ''}) async {
     final docs = await getTemporaryDirectory();
     final dest = p.join(docs.path, 'smart_pdf_temp');
@@ -523,6 +566,8 @@ class _ScannerPageState extends State<ScannerPage> {
     final path = _images[_currentPage];
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
       builder: (ctx) => ColorFilterSheet(
         imagePath: path,
         originalPath: _originals[path] ?? path,
@@ -557,40 +602,56 @@ class _ScannerPageState extends State<ScannerPage> {
       final decoded = img.decodeImage(bytes);
       if (decoded == null) continue;
 
-      img.Image processed;
-      switch (filterName) {
-        case 'bw1':
-          processed = img.adjustColor(img.grayscale(decoded), contrast: 2.5);
-          break;
-        case 'bw2':
-          final gray = img.grayscale(decoded);
-          processed = img.Image(width: gray.width, height: gray.height);
-          for (int y = 0; y < gray.height; y++) {
-            for (int x = 0; x < gray.width; x++) {
-              final lum = img.getLuminance(gray.getPixel(x, y));
-              final v = lum > AppConstants.filterBw2Threshold
-                  ? AppConstants.filterBw2White
-                  : 0;
-              processed.setPixelRgb(x, y, v, v, v);
-            }
-          }
-          break;
-        case 'gray':
-          processed = img.grayscale(decoded);
-          break;
-        case 'magic1':
-          processed = img.adjustColor(decoded, contrast: 1.9, brightness: 1.15);
-          break;
-        case 'magic2':
-          processed = img.adjustColor(
-            decoded,
-            contrast: 2.4,
-            saturation: 0.3,
-            brightness: 1.1,
-          );
-          break;
-        default:
-          processed = decoded;
+      // Apply the identical 5×4 color matrix that the Flutter ColorFilter
+      // preview uses. Flutter's matrix format is row-major [R,G,B,A] with a
+      // translation column (index 4, 9, 14, 19) in the 0-255 range.
+      // Result channel = m[0]*R + m[1]*G + m[2]*B + m[3]*A + m[4]  (clamped 0-255)
+      final matrix = _colorMatrixFor(filterName);
+      final processed = img.Image(width: decoded.width, height: decoded.height);
+
+      for (int y = 0; y < decoded.height; y++) {
+        for (int x = 0; x < decoded.width; x++) {
+          final px = decoded.getPixel(x, y);
+          final r = px.r.toDouble();
+          final g = px.g.toDouble();
+          final b = px.b.toDouble();
+          final a = px.a.toDouble();
+
+          int nr =
+              (matrix[0] * r +
+                      matrix[1] * g +
+                      matrix[2] * b +
+                      matrix[3] * a +
+                      matrix[4])
+                  .round()
+                  .clamp(0, 255);
+          int ng =
+              (matrix[5] * r +
+                      matrix[6] * g +
+                      matrix[7] * b +
+                      matrix[8] * a +
+                      matrix[9])
+                  .round()
+                  .clamp(0, 255);
+          int nb =
+              (matrix[10] * r +
+                      matrix[11] * g +
+                      matrix[12] * b +
+                      matrix[13] * a +
+                      matrix[14])
+                  .round()
+                  .clamp(0, 255);
+          int na =
+              (matrix[15] * r +
+                      matrix[16] * g +
+                      matrix[17] * b +
+                      matrix[18] * a +
+                      matrix[19])
+                  .round()
+                  .clamp(0, 255);
+
+          processed.setPixelRgba(x, y, nr, ng, nb, na);
+        }
       }
 
       await file.writeAsBytes(img.encodeJpg(processed, quality: 90));
@@ -598,6 +659,131 @@ class _ScannerPageState extends State<ScannerPage> {
       _bumpVersion(path);
     }
     setState(() {});
+  }
+
+  /// Returns the same 5×4 matrix (20 values, row-major) used by
+  /// [colorFilterFor] in color_filter_sheet.dart so preview == output.
+  static List<double> _colorMatrixFor(String id) {
+    switch (id) {
+      case 'magic1':
+        return [
+          1.9,
+          0,
+          0,
+          0,
+          -50,
+          0,
+          1.9,
+          0,
+          0,
+          -50,
+          0,
+          0,
+          1.9,
+          0,
+          -50,
+          0,
+          0,
+          0,
+          1,
+          0,
+        ];
+      case 'magic2':
+        return [
+          0.77,
+          0.63,
+          0.24,
+          0,
+          -40,
+          0.07,
+          1.53,
+          0.06,
+          0,
+          -40,
+          0.02,
+          0.18,
+          1.44,
+          0,
+          -40,
+          0,
+          0,
+          0,
+          1,
+          0,
+        ];
+      case 'bw1':
+        return [
+          0.299,
+          0.587,
+          0.114,
+          0,
+          60,
+          0.299,
+          0.587,
+          0.114,
+          0,
+          60,
+          0.299,
+          0.587,
+          0.114,
+          0,
+          60,
+          0,
+          0,
+          0,
+          1,
+          0,
+        ];
+      case 'bw2':
+        return [
+          1.5,
+          1.5,
+          1.5,
+          0,
+          -200,
+          1.5,
+          1.5,
+          1.5,
+          0,
+          -200,
+          1.5,
+          1.5,
+          1.5,
+          0,
+          -200,
+          0,
+          0,
+          0,
+          1,
+          0,
+        ];
+      case 'gray':
+        return [
+          0.299,
+          0.587,
+          0.114,
+          0,
+          0,
+          0.299,
+          0.587,
+          0.114,
+          0,
+          0,
+          0.299,
+          0.587,
+          0.114,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+        ];
+      default:
+        // Identity — no change
+        return [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0];
+    }
   }
 
   void _rotateCurrent() async {

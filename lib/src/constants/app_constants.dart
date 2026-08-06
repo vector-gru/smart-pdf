@@ -39,12 +39,12 @@ class AppConstants {
   static const String dateFormat = 'dd-MMM-yy H:mm';
 
   // Scanner page
-  static const double scannerPageViewFraction = 0.85;
+  static const double scannerPageViewFraction = 1.0;
   static const double scannerCardBorderRadius = 4.0;
   static const double scannerCardShadowBlur = 12.0;
   static const double scannerCardShadowAlpha = 0.12;
   static const double scannerPageItemShadowY = 4.0;
-  static const double scannerPageItemPaddingH = 8.0;
+  static const double scannerPageItemPaddingH = 0.0;
   static const double scannerPageItemPaddingV = 16.0;
   static const double scannerBottomBarHeight = 64.0;
   static const double scannerBottomBarPaddingTop = 12.0;
@@ -79,6 +79,7 @@ class AppConstants {
   static const double scannerShutterBottom = 24.0;
 
   // Color filter sheet
+  static const double filterSheetPreviewHeightFraction = 0.42;
   static const double filterSheetHeight = 120.0;
   static const double filterSheetItemWidth = 80.0;
   static const double filterSheetItemHeight = 90.0;
@@ -93,8 +94,6 @@ class AppConstants {
   static const double filterSheetToggleFontSize = 15.0;
   static const double filterSheetToggleGap = 16.0;
   static const double filterSheetApplyGap = 12.0;
-  static const int filterBw2Threshold = 140;
-  static const int filterBw2White = 255;
 
   // Crop page
   static const double cropPad = 20.0;

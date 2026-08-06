@@ -25,7 +25,10 @@ mixin DocActionsMixin<T extends StatefulWidget> on State<T> {
               : l10n.docDeleteContent(doc.title),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(l10n.docActionCancel)),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(l10n.docActionCancel),
+          ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             child: Text(
@@ -38,7 +41,10 @@ mixin DocActionsMixin<T extends StatefulWidget> on State<T> {
     );
     if (confirm != true) return;
     if (!isImported) {
-      try { final f = File(await resolveDocPath(doc.filePath)); if (await f.exists()) await f.delete(); } catch (_) {}
+      try {
+        final f = File(await resolveDocPath(doc.filePath));
+        if (await f.exists()) await f.delete();
+      } catch (_) {}
     }
     await db.deleteDocumentById(doc.id);
     await notifier.reload();
@@ -46,23 +52,32 @@ mixin DocActionsMixin<T extends StatefulWidget> on State<T> {
 
   Future<void> editDoc(Document doc) async {
     final rawPages = await db.getPageImages(doc.id);
-    final absImagePaths = await Future.wait(rawPages.map((p) => resolveDocPath(p.imagePath)));
+    final absImagePaths = await Future.wait(
+      rawPages.map((p) => resolveDocPath(p.imagePath)),
+    );
     if (!mounted) return;
     final result = await Navigator.of(context).push<ScannerResult>(
-      MaterialPageRoute(builder: (_) => ScannerPage(
-        initialImages: absImagePaths,
-        initialTitle: doc.title,
-      )),
+      MaterialPageRoute(
+        builder: (_) =>
+            ScannerPage(initialImages: absImagePaths, initialTitle: doc.title),
+      ),
     );
     if (result != null && result.images.isNotEmpty && mounted) {
       await db.deleteDocumentById(doc.id);
-      final created = await db.createDocumentFromImages(result.title, result.images);
+      final created = await db.createDocumentFromImages(
+        result.title,
+        result.images,
+        originals: result.originals,
+      );
       await notifier.reload();
       final updated = await db.getDocumentById(created);
       if (updated != null && mounted) {
-        Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => ViewerPage(pdfPath: updated.filePath, title: updated.title),
-        ));
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) =>
+                ViewerPage(pdfPath: updated.filePath, title: updated.title),
+          ),
+        );
       }
     }
   }
@@ -72,10 +87,12 @@ mixin DocActionsMixin<T extends StatefulWidget> on State<T> {
     await db.toggleFavourite(doc.id, !doc.isFavorite);
     await notifier.reload();
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(doc.isFavorite ? l10n.docFavRemoved : l10n.docFavAdded),
-        duration: const Duration(seconds: 2),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(doc.isFavorite ? l10n.docFavRemoved : l10n.docFavAdded),
+          duration: const Duration(seconds: 2),
+        ),
+      );
     }
   }
 
@@ -86,10 +103,19 @@ mixin DocActionsMixin<T extends StatefulWidget> on State<T> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(l10n.docRenameTitle),
-        content: TextField(controller: ctr, decoration: InputDecoration(labelText: l10n.docRenameLabel)),
+        content: TextField(
+          controller: ctr,
+          decoration: InputDecoration(labelText: l10n.docRenameLabel),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: Text(l10n.docActionCancel)),
-          ElevatedButton(onPressed: () => Navigator.of(ctx).pop(ctr.text), child: Text(l10n.docActionSave)),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(l10n.docActionCancel),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(ctr.text),
+            child: Text(l10n.docActionSave),
+          ),
         ],
       ),
     );

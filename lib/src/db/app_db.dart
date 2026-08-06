@@ -37,7 +37,8 @@ class Documents extends Table {
 
 class Pages extends Table {
   IntColumn get id => integer().autoIncrement()();
-  TextColumn get documentId => text().customConstraint('NOT NULL REFERENCES documents(id)')();
+  TextColumn get documentId =>
+      text().customConstraint('NOT NULL REFERENCES documents(id)')();
   IntColumn get pageIndex => integer()();
   TextColumn get imagePath => text()(); // path to saved page image
 }
@@ -67,30 +68,46 @@ class AppDatabase extends _$AppDatabase {
   );
 
   Future<List<Document>> getAllDocuments() {
-    return (select(documents)..orderBy([(t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc)])).get();
+    return (select(documents)..orderBy([
+          (t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc),
+        ]))
+        .get();
   }
 
   Future<List<Document>> getRecentDocuments({int limit = 20}) {
     return (select(documents)
-      ..orderBy([(t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc)])
-      ..limit(limit)).get();
+          ..orderBy([
+            (t) =>
+                OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc),
+          ])
+          ..limit(limit))
+        .get();
   }
 
   Future<List<Document>> getFavouriteDocuments() {
     return (select(documents)
-      ..where((d) => d.isFavorite.equals(true))
-      ..orderBy([(t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc)])).get();
+          ..where((d) => d.isFavorite.equals(true))
+          ..orderBy([
+            (t) =>
+                OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc),
+          ]))
+        .get();
   }
 
   Future<void> toggleFavourite(String id, bool value) async {
-    await (update(documents)..where((d) => d.id.equals(id)))
-        .write(DocumentsCompanion(isFavorite: Value(value), updatedAt: Value(DateTime.now())));
+    await (update(documents)..where((d) => d.id.equals(id))).write(
+      DocumentsCompanion(
+        isFavorite: Value(value),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
   }
 
   Future<List<Page>> getPageImages(String documentId) {
     return (select(pages)
-      ..where((p) => p.documentId.equals(documentId))
-      ..orderBy([(p) => OrderingTerm(expression: p.pageIndex)])).get();
+          ..where((p) => p.documentId.equals(documentId))
+          ..orderBy([(p) => OrderingTerm(expression: p.pageIndex)]))
+        .get();
   }
 
   Future<Document?> getDocumentById(String id) {
@@ -105,7 +122,12 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> renameDocument(String id, String newTitle) async {
-    await (update(documents)..where((d) => d.id.equals(id))).write(DocumentsCompanion(title: Value(newTitle), updatedAt: Value(DateTime.now())));
+    await (update(documents)..where((d) => d.id.equals(id))).write(
+      DocumentsCompanion(
+        title: Value(newTitle),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
   }
 
   /// Imports an existing PDF file from [sourcePath] into app storage.
@@ -113,10 +135,14 @@ class AppDatabase extends _$AppDatabase {
   Future<String> importPdfFile(String sourcePath) async {
     final docsDir = await getApplicationDocumentsDirectory();
     final docUuid = const Uuid().v4();
-    final docFolder = Directory(p.join(docsDir.path, 'smart_pdf', 'files', docUuid));
+    final docFolder = Directory(
+      p.join(docsDir.path, 'smart_pdf', 'files', docUuid),
+    );
     await docFolder.create(recursive: true);
 
-    final ext = p.extension(sourcePath).toLowerCase().isEmpty ? '.pdf' : p.extension(sourcePath).toLowerCase();
+    final ext = p.extension(sourcePath).toLowerCase().isEmpty
+        ? '.pdf'
+        : p.extension(sourcePath).toLowerCase();
     final destAbsPath = p.join(docFolder.path, 'document$ext');
     await File(sourcePath).copy(destAbsPath);
     final relativePdfPath = p.relative(destAbsPath, from: docsDir.path);
@@ -128,8 +154,14 @@ class AppDatabase extends _$AppDatabase {
       pagesCount = doc.pagesCount;
       await doc.close();
       final pdfBytes = await File(destAbsPath).readAsBytes();
-      await for (final raster in Printing.raster(pdfBytes, pages: [0], dpi: 150)) {
-        final thumbsDir = Directory(p.join(docsDir.path, 'smart_pdf', 'thumbs'));
+      await for (final raster in Printing.raster(
+        pdfBytes,
+        pages: [0],
+        dpi: 150,
+      )) {
+        final thumbsDir = Directory(
+          p.join(docsDir.path, 'smart_pdf', 'thumbs'),
+        );
         await thumbsDir.create(recursive: true);
         final thumbAbsFile = p.join(thumbsDir.path, '${const Uuid().v4()}.jpg');
 
@@ -140,8 +172,13 @@ class AppDatabase extends _$AppDatabase {
         final canvas = ui.Canvas(recorder);
         canvas.drawColor(const ui.Color(0xFFFFFFFF), ui.BlendMode.src);
         canvas.drawImage(rawImage, ui.Offset.zero, ui.Paint());
-        final flatImage = await recorder.endRecording().toImage(rawImage.width, rawImage.height);
-        final byteData = await flatImage.toByteData(format: ui.ImageByteFormat.png);
+        final flatImage = await recorder.endRecording().toImage(
+          rawImage.width,
+          rawImage.height,
+        );
+        final byteData = await flatImage.toByteData(
+          format: ui.ImageByteFormat.png,
+        );
         final pngBytes = byteData!.buffer.asUint8List();
 
         final compressed = await FlutterImageCompress.compressWithList(
@@ -159,44 +196,83 @@ class AppDatabase extends _$AppDatabase {
 
     final title = p.basenameWithoutExtension(sourcePath);
     final docId = const Uuid().v4();
-    await into(documents).insert(DocumentsCompanion.insert(
-      id: Value(docId),
-      title: title,
-      filePath: relativePdfPath,
-      pagesCount: Value(pagesCount),
-      thumbnailPath: Value(relativeThumbnailPath),
-      isImported: const Value(true),
-    ));
+    await into(documents).insert(
+      DocumentsCompanion.insert(
+        id: Value(docId),
+        title: title,
+        filePath: relativePdfPath,
+        pagesCount: Value(pagesCount),
+        thumbnailPath: Value(relativeThumbnailPath),
+        isImported: const Value(true),
+      ),
+    );
     return docId;
   }
 
   /// Creates PDF from images, saves file, writes DB rows and copies page images into a document folder.
+  /// [originals] maps each working image path to its true original (unfiltered) temp path,
+  /// as tracked by ScannerPage._originals. This ensures the permanent `page_N_orig<ext>`
+  /// always reflects the true unfiltered image even after multiple save cycles.
   /// Returns created document id.
-  Future<String> createDocumentFromImages(String title, List<String> imagePaths) async {
+  Future<String> createDocumentFromImages(
+    String title,
+    List<String> imagePaths, {
+    Map<String, String> originals = const {},
+  }) async {
     return transaction(() async {
       final docsDir = await getApplicationDocumentsDirectory();
       final docUuid = const Uuid().v4();
-      final docFolder = Directory(p.join(docsDir.path, 'smart_pdf', 'files', docUuid));
+      final docFolder = Directory(
+        p.join(docsDir.path, 'smart_pdf', 'files', docUuid),
+      );
       await docFolder.create(recursive: true);
 
-      // Save page images and keep relative paths
+      // Save page images and keep relative paths.
+      // For each image we also persist a `page_N_orig<ext>` so that re-editing
+      // can always restore the true original regardless of how many times a
+      // colour filter has been applied and saved.
       final savedImagePaths = <String>[];
       final relativeImagePaths = <String>[];
       for (var i = 0; i < imagePaths.length; i++) {
-        final src = File(imagePaths[i]);
-        final dest = await src.copy(p.join(docFolder.path, 'page_${i + 1}${p.extension(imagePaths[i])}'));
+        final ext = p.extension(imagePaths[i]);
+        final dest = await File(
+          imagePaths[i],
+        ).copy(p.join(docFolder.path, 'page_${i + 1}$ext'));
         savedImagePaths.add(dest.path);
         relativeImagePaths.add(p.relative(dest.path, from: docsDir.path));
+
+        // Determine the source for the permanent original:
+        //   1. Explicitly tracked original from ScannerResult.originals (most reliable)
+        //   2. _orig_ sibling in the same temp dir (legacy fallback)
+        //   3. The working copy itself (first-time scan — image IS the original)
+        final trackedOrig = originals[imagePaths[i]];
+        String origSrc;
+        if (trackedOrig != null && await File(trackedOrig).exists()) {
+          origSrc = trackedOrig;
+        } else {
+          final sibling = _origSiblingFor(imagePaths[i]);
+          origSrc = (sibling != null && await File(sibling).exists())
+              ? sibling
+              : imagePaths[i];
+        }
+        await File(
+          origSrc,
+        ).copy(p.join(docFolder.path, 'page_${i + 1}_orig$ext'));
       }
 
       final fileName = title.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_');
-      final pdfAbsPath = await PdfService.createPdfFromImages(savedImagePaths, fileName);
+      final pdfAbsPath = await PdfService.createPdfFromImages(
+        savedImagePaths,
+        fileName,
+      );
       final relativePdfPath = p.relative(pdfAbsPath, from: docsDir.path);
 
       // Generate thumbnail, store relative path
       String? relativeThumbnailPath;
       if (savedImagePaths.isNotEmpty) {
-        final thumbsDir = Directory(p.join(docsDir.path, 'smart_pdf', 'thumbs'));
+        final thumbsDir = Directory(
+          p.join(docsDir.path, 'smart_pdf', 'thumbs'),
+        );
         await thumbsDir.create(recursive: true);
         final thumbAbsFile = p.join(thumbsDir.path, '${const Uuid().v4()}.jpg');
         final result = await FlutterImageCompress.compressAndGetFile(
@@ -212,19 +288,39 @@ class AppDatabase extends _$AppDatabase {
       }
 
       final docId = const Uuid().v4();
-      await into(documents).insert(DocumentsCompanion.insert(
-        id: Value(docId),
-        title: title,
-        filePath: relativePdfPath,
-        pagesCount: Value(savedImagePaths.length),
-        thumbnailPath: Value(relativeThumbnailPath),
-      ));
+      await into(documents).insert(
+        DocumentsCompanion.insert(
+          id: Value(docId),
+          title: title,
+          filePath: relativePdfPath,
+          pagesCount: Value(savedImagePaths.length),
+          thumbnailPath: Value(relativeThumbnailPath),
+        ),
+      );
 
       for (var i = 0; i < relativeImagePaths.length; i++) {
-        await into(pages).insert(PagesCompanion.insert(documentId: docId, pageIndex: i, imagePath: relativeImagePaths[i]));
+        await into(pages).insert(
+          PagesCompanion.insert(
+            documentId: docId,
+            pageIndex: i,
+            imagePath: relativeImagePaths[i],
+          ),
+        );
       }
 
       return docId;
     });
+  }
+
+  /// Returns the path of a `_orig_`-prefixed sibling file that ScannerPage
+  /// writes into the temp directory, or null if it doesn't exist on disk.
+  /// Used so that createDocumentFromImages can persist the true original even
+  /// after a colour filter has already been applied to the working copy.
+  static String? _origSiblingFor(String workingPath) {
+    final dir = p.dirname(workingPath);
+    final base = p.basename(workingPath);
+    final candidate = p.join(dir, '_orig_$base');
+    if (File(candidate).existsSync()) return candidate;
+    return null;
   }
 }
