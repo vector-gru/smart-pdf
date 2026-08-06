@@ -322,6 +322,144 @@ abstract class AppLocalizations {
   /// **'No recent documents'**
   String get recentEmpty;
 
+  /// No description provided for @collectionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Collections'**
+  String get collectionsTitle;
+
+  /// No description provided for @collectionsNewCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'New collection'**
+  String get collectionsNewCollection;
+
+  /// No description provided for @collectionsEditCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit collection'**
+  String get collectionsEditCollection;
+
+  /// No description provided for @collectionsNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get collectionsNameLabel;
+
+  /// No description provided for @collectionsColourLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour'**
+  String get collectionsColourLabel;
+
+  /// No description provided for @collectionsIconLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Icon'**
+  String get collectionsIconLabel;
+
+  /// No description provided for @collectionsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No collections yet'**
+  String get collectionsEmpty;
+
+  /// No description provided for @collectionsEmptySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Group your documents into collections for easier access.'**
+  String get collectionsEmptySubtitle;
+
+  /// No description provided for @collectionsDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete collection?'**
+  String get collectionsDeleteTitle;
+
+  /// No description provided for @collectionsDeleteContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete \"{name}\"? Documents inside will not be deleted.'**
+  String collectionsDeleteContent(String name);
+
+  /// No description provided for @collectionsDocCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No documents} =1{1 document} other{{count} documents}}'**
+  String collectionsDocCount(int count);
+
+  /// No description provided for @collectionsEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get collectionsEdit;
+
+  /// No description provided for @collectionsDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get collectionsDelete;
+
+  /// No description provided for @collectionsAddDocuments.
+  ///
+  /// In en, this message translates to:
+  /// **'Add documents'**
+  String get collectionsAddDocuments;
+
+  /// No description provided for @collectionsAddNoneAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'All documents are already in this collection.'**
+  String get collectionsAddNoneAvailable;
+
+  /// No description provided for @collectionsSelectedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 selected} other{{count} selected}}'**
+  String collectionsSelectedCount(int count);
+
+  /// No description provided for @collectionsAddButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get collectionsAddButton;
+
+  /// No description provided for @collectionsDetailEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No documents here'**
+  String get collectionsDetailEmpty;
+
+  /// No description provided for @collectionsDetailEmptySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add documents to this collection to see them here.'**
+  String get collectionsDetailEmptySubtitle;
+
+  /// No description provided for @collectionsSwipeToRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get collectionsSwipeToRemove;
+
+  /// No description provided for @collectionsDocTypeImported.
+  ///
+  /// In en, this message translates to:
+  /// **'Imported file'**
+  String get collectionsDocTypeImported;
+
+  /// No description provided for @collectionsDocTypeScanned.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanned document'**
+  String get collectionsDocTypeScanned;
+
+  /// No description provided for @navCollections.
+  ///
+  /// In en, this message translates to:
+  /// **'Collections'**
+  String get navCollections;
+
   /// No description provided for @favouritesTitle.
   ///
   /// In en, this message translates to:

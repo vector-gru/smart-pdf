@@ -140,6 +140,97 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recentEmpty => 'No recent documents';
 
   @override
+  String get collectionsTitle => 'Collections';
+
+  @override
+  String get collectionsNewCollection => 'New collection';
+
+  @override
+  String get collectionsEditCollection => 'Edit collection';
+
+  @override
+  String get collectionsNameLabel => 'Name';
+
+  @override
+  String get collectionsColourLabel => 'Colour';
+
+  @override
+  String get collectionsIconLabel => 'Icon';
+
+  @override
+  String get collectionsEmpty => 'No collections yet';
+
+  @override
+  String get collectionsEmptySubtitle =>
+      'Group your documents into collections for easier access.';
+
+  @override
+  String get collectionsDeleteTitle => 'Delete collection?';
+
+  @override
+  String collectionsDeleteContent(String name) {
+    return 'Delete \"$name\"? Documents inside will not be deleted.';
+  }
+
+  @override
+  String collectionsDocCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count documents',
+      one: '1 document',
+      zero: 'No documents',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get collectionsEdit => 'Edit';
+
+  @override
+  String get collectionsDelete => 'Delete';
+
+  @override
+  String get collectionsAddDocuments => 'Add documents';
+
+  @override
+  String get collectionsAddNoneAvailable =>
+      'All documents are already in this collection.';
+
+  @override
+  String collectionsSelectedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count selected',
+      one: '1 selected',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get collectionsAddButton => 'Add';
+
+  @override
+  String get collectionsDetailEmpty => 'No documents here';
+
+  @override
+  String get collectionsDetailEmptySubtitle =>
+      'Add documents to this collection to see them here.';
+
+  @override
+  String get collectionsSwipeToRemove => 'Remove';
+
+  @override
+  String get collectionsDocTypeImported => 'Imported file';
+
+  @override
+  String get collectionsDocTypeScanned => 'Scanned document';
+
+  @override
+  String get navCollections => 'Collections';
+
+  @override
   String get favouritesTitle => 'Favourites';
 
   @override

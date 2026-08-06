@@ -13,7 +13,8 @@ import 'theme/theme_provider.dart';
 import 'settings/settings_provider.dart';
 import 'pages/home_page.dart';
 import 'pages/files_page.dart';
-import 'pages/recent_page.dart';
+import 'db/collections_notifier.dart';
+import 'pages/collections_page.dart';
 import 'pages/favourite_page.dart';
 import 'pages/scanner_page.dart'
     show ScannerPage, ScannerResult, CameraCapturePage;
@@ -40,13 +41,16 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   int _currentIndex = 0;
   late final DocsNotifier _notifier;
+  late final CollectionsNotifier _collectionsNotifier;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
     super.initState();
     _notifier = DocsNotifier(widget.db);
+    _collectionsNotifier = CollectionsNotifier(widget.db);
     _notifier.reload();
+    _collectionsNotifier.reload();
     _initSharingIntent();
   }
 
@@ -90,6 +94,7 @@ class _AppShellState extends State<AppShell> {
   @override
   void dispose() {
     _notifier.dispose();
+    _collectionsNotifier.dispose();
     super.dispose();
   }
 
@@ -102,7 +107,11 @@ class _AppShellState extends State<AppShell> {
         onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
       ),
       FilesPage(db: widget.db, notifier: _notifier),
-      RecentPage(notifier: _notifier),
+      CollectionsPage(
+        db: widget.db,
+        collectionsNotifier: _collectionsNotifier,
+        docsNotifier: _notifier,
+      ),
       FavouritePage(notifier: _notifier),
     ];
     return Scaffold(
@@ -149,7 +158,7 @@ class _FloatingNavBar extends StatelessWidget {
   static const _icons = [
     (Icons.home_outlined, Icons.home),
     (Icons.description_outlined, Icons.description),
-    (Icons.access_time_outlined, Icons.access_time_filled),
+    (Icons.folder_copy_outlined, Icons.folder_copy),
     (Icons.star_outline, Icons.star),
   ];
 
@@ -159,7 +168,7 @@ class _FloatingNavBar extends StatelessWidget {
     final labels = [
       l10n.navHome,
       l10n.navFiles,
-      l10n.navRecent,
+      l10n.navCollections,
       l10n.navFavourite,
     ];
     return SafeArea(

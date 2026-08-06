@@ -143,6 +143,97 @@ class AppLocalizationsPt extends AppLocalizations {
   String get recentEmpty => 'Sem documentos recentes';
 
   @override
+  String get collectionsTitle => 'Coleções';
+
+  @override
+  String get collectionsNewCollection => 'Nova coleção';
+
+  @override
+  String get collectionsEditCollection => 'Editar coleção';
+
+  @override
+  String get collectionsNameLabel => 'Nome';
+
+  @override
+  String get collectionsColourLabel => 'Cor';
+
+  @override
+  String get collectionsIconLabel => 'Ícone';
+
+  @override
+  String get collectionsEmpty => 'Sem coleções ainda';
+
+  @override
+  String get collectionsEmptySubtitle =>
+      'Agrupe os seus documentos em coleções para acesso mais fácil.';
+
+  @override
+  String get collectionsDeleteTitle => 'Eliminar coleção?';
+
+  @override
+  String collectionsDeleteContent(String name) {
+    return 'Eliminar \"$name\"? Os documentos dentro não serão eliminados.';
+  }
+
+  @override
+  String collectionsDocCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count documentos',
+      one: '1 documento',
+      zero: 'Sem documentos',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get collectionsEdit => 'Editar';
+
+  @override
+  String get collectionsDelete => 'Eliminar';
+
+  @override
+  String get collectionsAddDocuments => 'Adicionar documentos';
+
+  @override
+  String get collectionsAddNoneAvailable =>
+      'Todos os documentos já estão nesta coleção.';
+
+  @override
+  String collectionsSelectedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count selecionados',
+      one: '1 selecionado',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get collectionsAddButton => 'Adicionar';
+
+  @override
+  String get collectionsDetailEmpty => 'Sem documentos aqui';
+
+  @override
+  String get collectionsDetailEmptySubtitle =>
+      'Adicione documentos a esta coleção para os ver aqui.';
+
+  @override
+  String get collectionsSwipeToRemove => 'Remover';
+
+  @override
+  String get collectionsDocTypeImported => 'Ficheiro importado';
+
+  @override
+  String get collectionsDocTypeScanned => 'Documento digitalizado';
+
+  @override
+  String get navCollections => 'Coleções';
+
+  @override
   String get favouritesTitle => 'Favoritos';
 
   @override

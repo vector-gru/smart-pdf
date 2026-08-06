@@ -145,6 +145,97 @@ class AppLocalizationsFr extends AppLocalizations {
   String get recentEmpty => 'Aucun document récent';
 
   @override
+  String get collectionsTitle => 'Collections';
+
+  @override
+  String get collectionsNewCollection => 'Nouvelle collection';
+
+  @override
+  String get collectionsEditCollection => 'Modifier la collection';
+
+  @override
+  String get collectionsNameLabel => 'Nom';
+
+  @override
+  String get collectionsColourLabel => 'Couleur';
+
+  @override
+  String get collectionsIconLabel => 'Icône';
+
+  @override
+  String get collectionsEmpty => 'Aucune collection';
+
+  @override
+  String get collectionsEmptySubtitle =>
+      'Regroupez vos documents en collections pour y accéder plus facilement.';
+
+  @override
+  String get collectionsDeleteTitle => 'Supprimer la collection ?';
+
+  @override
+  String collectionsDeleteContent(String name) {
+    return 'Supprimer « $name » ? Les documents à l\'intérieur ne seront pas supprimés.';
+  }
+
+  @override
+  String collectionsDocCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count documents',
+      one: '1 document',
+      zero: 'Aucun document',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get collectionsEdit => 'Modifier';
+
+  @override
+  String get collectionsDelete => 'Supprimer';
+
+  @override
+  String get collectionsAddDocuments => 'Ajouter des documents';
+
+  @override
+  String get collectionsAddNoneAvailable =>
+      'Tous les documents sont déjà dans cette collection.';
+
+  @override
+  String collectionsSelectedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sélectionnés',
+      one: '1 sélectionné',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get collectionsAddButton => 'Ajouter';
+
+  @override
+  String get collectionsDetailEmpty => 'Aucun document ici';
+
+  @override
+  String get collectionsDetailEmptySubtitle =>
+      'Ajoutez des documents à cette collection pour les voir ici.';
+
+  @override
+  String get collectionsSwipeToRemove => 'Retirer';
+
+  @override
+  String get collectionsDocTypeImported => 'Fichier importé';
+
+  @override
+  String get collectionsDocTypeScanned => 'Document numérisé';
+
+  @override
+  String get navCollections => 'Collections';
+
+  @override
   String get favouritesTitle => 'Favoris';
 
   @override

@@ -21,6 +21,31 @@ Future<String> resolveDocPath(String stored) async {
 }
 
 // Tables
+class Collections extends Table {
+  TextColumn get id => text().clientDefault(() => const Uuid().v4())();
+  TextColumn get name => text().withLength(min: 1, max: 255)();
+  TextColumn get colorHex => text().withDefault(const Constant('#9E8A4F'))();
+  TextColumn get iconName => text().withDefault(const Constant('folder'))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class CollectionDocuments extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get collectionId =>
+      text().customConstraint('NOT NULL REFERENCES collections(id)')();
+  TextColumn get documentId =>
+      text().customConstraint('NOT NULL REFERENCES documents(id)')();
+  DateTimeColumn get addedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+    {collectionId, documentId},
+  ];
+}
+
 class Documents extends Table {
   TextColumn get id => text().clientDefault(() => const Uuid().v4())();
   TextColumn get title => text().withLength(min: 1, max: 255)();
@@ -51,18 +76,22 @@ LazyDatabase _openConnection() {
   });
 }
 
-@DriftDatabase(tables: [Documents, Pages])
+@DriftDatabase(tables: [Documents, Pages, Collections, CollectionDocuments])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onUpgrade: (m, from, to) async {
       if (from < 2) {
         await m.addColumn(documents, documents.isImported);
+      }
+      if (from < 3) {
+        await m.createTable(collections);
+        await m.createTable(collectionDocuments);
       }
     },
   );
@@ -114,7 +143,167 @@ class AppDatabase extends _$AppDatabase {
     return (select(documents)..where((d) => d.id.equals(id))).getSingleOrNull();
   }
 
+  // ── Collections ────────────────────────────────────────────────────────────
+
+  /// Returns all collections ordered by creation date (newest first).
+  Future<List<Collection>> getAllCollections() {
+    return (select(collections)..orderBy([
+          (c) => OrderingTerm(expression: c.createdAt, mode: OrderingMode.desc),
+        ]))
+        .get();
+  }
+
+  /// Creates a new collection and returns its generated id.
+  Future<String> createCollection({
+    required String name,
+    String colorHex = '#9E8A4F',
+    String iconName = 'folder',
+  }) async {
+    final id = const Uuid().v4();
+    await into(collections).insert(
+      CollectionsCompanion.insert(
+        id: Value(id),
+        name: name,
+        colorHex: Value(colorHex),
+        iconName: Value(iconName),
+      ),
+    );
+    return id;
+  }
+
+  /// Renames an existing collection.
+  Future<void> renameCollection(String id, String newName) async {
+    await (update(collections)..where((c) => c.id.equals(id))).write(
+      CollectionsCompanion(name: Value(newName)),
+    );
+  }
+
+  /// Updates the colour and icon of a collection.
+  Future<void> updateCollectionAppearance(
+    String id, {
+    required String colorHex,
+    required String iconName,
+  }) async {
+    await (update(collections)..where((c) => c.id.equals(id))).write(
+      CollectionsCompanion(
+        colorHex: Value(colorHex),
+        iconName: Value(iconName),
+      ),
+    );
+  }
+
+  /// Deletes a collection and all its membership rows.
+  Future<void> deleteCollection(String id) async {
+    await (delete(
+      collectionDocuments,
+    )..where((cd) => cd.collectionId.equals(id))).go();
+    await (delete(collections)..where((c) => c.id.equals(id))).go();
+  }
+
+  /// Returns all documents that belong to [collectionId].
+  Future<List<Document>> getDocumentsInCollection(String collectionId) async {
+    final ids =
+        await (select(collectionDocuments)
+              ..where((cd) => cd.collectionId.equals(collectionId))
+              ..orderBy([
+                (cd) => OrderingTerm(
+                  expression: cd.addedAt,
+                  mode: OrderingMode.desc,
+                ),
+              ]))
+            .get();
+    if (ids.isEmpty) return [];
+    final docIds = ids.map((r) => r.documentId).toList();
+    return (select(documents)..where((d) => d.id.isIn(docIds))).get();
+  }
+
+  /// Returns the set of document ids already in [collectionId].
+  Future<Set<String>> getDocumentIdsInCollection(String collectionId) async {
+    final rows = await (select(
+      collectionDocuments,
+    )..where((cd) => cd.collectionId.equals(collectionId))).get();
+    return rows.map((r) => r.documentId).toSet();
+  }
+
+  /// Adds [documentId] to [collectionId] (no-op if already present).
+  Future<void> addDocumentToCollection({
+    required String collectionId,
+    required String documentId,
+  }) async {
+    await into(collectionDocuments).insertOnConflictUpdate(
+      CollectionDocumentsCompanion.insert(
+        collectionId: collectionId,
+        documentId: documentId,
+      ),
+    );
+  }
+
+  /// Removes [documentId] from [collectionId].
+  Future<void> removeDocumentFromCollection({
+    required String collectionId,
+    required String documentId,
+  }) async {
+    await (delete(collectionDocuments)..where(
+          (cd) =>
+              cd.collectionId.equals(collectionId) &
+              cd.documentId.equals(documentId),
+        ))
+        .go();
+  }
+
+  /// Returns how many documents are in [collectionId].
+  Future<int> getCollectionDocumentCount(String collectionId) async {
+    final count = collectionDocuments.id.count();
+    final query = selectOnly(collectionDocuments)
+      ..addColumns([count])
+      ..where(collectionDocuments.collectionId.equals(collectionId));
+    final row = await query.getSingle();
+    return row.read(count) ?? 0;
+  }
+
+  /// Returns a map of collectionId → document count for all collections.
+  Future<Map<String, int>> getAllCollectionCounts() async {
+    final count = collectionDocuments.id.count();
+    final query = selectOnly(collectionDocuments)
+      ..addColumns([collectionDocuments.collectionId, count])
+      ..groupBy([collectionDocuments.collectionId]);
+    final rows = await query.get();
+    return {
+      for (final r in rows)
+        r.read(collectionDocuments.collectionId)!: r.read(count) ?? 0,
+    };
+  }
+
+  /// Returns the most recent thumbnail path among documents in [collectionId],
+  /// or null if the collection has no documents with thumbnails.
+  Future<String?> getCollectionCoverThumbnail(String collectionId) async {
+    final memberRows =
+        await (select(collectionDocuments)
+              ..where((cd) => cd.collectionId.equals(collectionId))
+              ..orderBy([
+                (cd) => OrderingTerm(
+                  expression: cd.addedAt,
+                  mode: OrderingMode.desc,
+                ),
+              ])
+              ..limit(5))
+            .get();
+    if (memberRows.isEmpty) return null;
+    final docIds = memberRows.map((r) => r.documentId).toList();
+    final docs = await (select(
+      documents,
+    )..where((d) => d.id.isIn(docIds) & d.thumbnailPath.isNotNull())).get();
+    if (docs.isEmpty) return null;
+    return docs.first.thumbnailPath;
+  }
+
+  // ── Documents ──────────────────────────────────────────────────────────────
+
   Future<void> deleteDocumentById(String id) async {
+    // Remove from any collections first
+    await (delete(
+      collectionDocuments,
+    )..where((cd) => cd.documentId.equals(id))).go();
     // delete pages rows
     await (delete(pages)..where((p) => p.documentId.equals(id))).go();
     // delete document row

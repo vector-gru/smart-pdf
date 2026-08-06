@@ -65,6 +65,39 @@
   "recentTitle": "الأخيرة",
   "recentEmpty": "لا توجد مستندات حديثة",
 
+  "navCollections": "المجموعات",
+  "collectionsTitle": "المجموعات",
+  "collectionsNewCollection": "مجموعة جديدة",
+  "collectionsEditCollection": "تعديل المجموعة",
+  "collectionsNameLabel": "الاسم",
+  "collectionsColourLabel": "اللون",
+  "collectionsIconLabel": "الأيقونة",
+  "collectionsEmpty": "لا توجد مجموعات بعد",
+  "collectionsEmptySubtitle": "رتّب مستنداتك في مجموعات للوصول إليها بسهولة.",
+  "collectionsDeleteTitle": "حذف المجموعة؟",
+  "collectionsDeleteContent": "حذف \"{name}\"؟ لن يتم حذف المستندات الموجودة بداخلها.",
+  "@collectionsDeleteContent": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "collectionsDocCount": "{count, plural, =0{لا توجد مستندات} =1{مستند واحد} other{{count} مستندات}}",
+  "@collectionsDocCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "collectionsEdit": "تعديل",
+  "collectionsDelete": "حذف",
+  "collectionsAddDocuments": "إضافة مستندات",
+  "collectionsAddNoneAvailable": "جميع المستندات موجودة بالفعل في هذه المجموعة.",
+  "collectionsSelectedCount": "{count, plural, =1{تم تحديد 1} other{تم تحديد {count}}}",
+  "@collectionsSelectedCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "collectionsAddButton": "إضافة",
+  "collectionsDetailEmpty": "لا توجد مستندات هنا",
+  "collectionsDetailEmptySubtitle": "أضف مستندات إلى هذه المجموعة لعرضها هنا.",
+  "collectionsSwipeToRemove": "إزالة",
+  "collectionsDocTypeImported": "ملف مستورد",
+  "collectionsDocTypeScanned": "مستند ممسوح ضوئيًا",
+
   "favouritesTitle": "المفضلة",
   "favouritesEmpty": "لا توجد مفضلات بعد",
   "favouritesEmptySubtitle": "ضع نجمة على مستند لرؤيته هنا",

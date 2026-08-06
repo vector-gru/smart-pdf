@@ -65,6 +65,39 @@
   "recentTitle": "हाल के",
   "recentEmpty": "कोई हालिया दस्तावेज़ नहीं",
 
+  "navCollections": "संग्रह",
+  "collectionsTitle": "संग्रह",
+  "collectionsNewCollection": "नया संग्रह",
+  "collectionsEditCollection": "संग्रह संपादित करें",
+  "collectionsNameLabel": "नाम",
+  "collectionsColourLabel": "रंग",
+  "collectionsIconLabel": "आइकॉन",
+  "collectionsEmpty": "अभी कोई संग्रह नहीं",
+  "collectionsEmptySubtitle": "आसान पहुँच के लिए अपने दस्तावेज़ों को संग्रह में समूहित करें।",
+  "collectionsDeleteTitle": "संग्रह हटाएँ?",
+  "collectionsDeleteContent": "\"{name}\" हटाएँ? अंदर के दस्तावेज़ नहीं हटाए जाएँगे।",
+  "@collectionsDeleteContent": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "collectionsDocCount": "{count, plural, =0{कोई दस्तावेज़ नहीं} =1{1 दस्तावेज़} other{{count} दस्तावेज़}}",
+  "@collectionsDocCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "collectionsEdit": "संपादित करें",
+  "collectionsDelete": "हटाएँ",
+  "collectionsAddDocuments": "दस्तावेज़ जोड़ें",
+  "collectionsAddNoneAvailable": "सभी दस्तावेज़ पहले से इस संग्रह में हैं।",
+  "collectionsSelectedCount": "{count, plural, =1{1 चुना गया} other{{count} चुने गए}}",
+  "@collectionsSelectedCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "collectionsAddButton": "जोड़ें",
+  "collectionsDetailEmpty": "यहाँ कोई दस्तावेज़ नहीं",
+  "collectionsDetailEmptySubtitle": "यहाँ देखने के लिए इस संग्रह में दस्तावेज़ जोड़ें।",
+  "collectionsSwipeToRemove": "निकालें",
+  "collectionsDocTypeImported": "आयातित फ़ाइल",
+  "collectionsDocTypeScanned": "स्कैन किया गया दस्तावेज़",
+
   "favouritesTitle": "पसंदीदा",
   "favouritesEmpty": "अभी कोई पसंदीदा नहीं",
   "favouritesEmptySubtitle": "यहाँ देखने के लिए किसी दस्तावेज़ पर स्टार लगाएँ",

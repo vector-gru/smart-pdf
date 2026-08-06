@@ -140,6 +140,97 @@ class AppLocalizationsAr extends AppLocalizations {
   String get recentEmpty => 'لا توجد مستندات حديثة';
 
   @override
+  String get collectionsTitle => 'المجموعات';
+
+  @override
+  String get collectionsNewCollection => 'مجموعة جديدة';
+
+  @override
+  String get collectionsEditCollection => 'تعديل المجموعة';
+
+  @override
+  String get collectionsNameLabel => 'الاسم';
+
+  @override
+  String get collectionsColourLabel => 'اللون';
+
+  @override
+  String get collectionsIconLabel => 'الأيقونة';
+
+  @override
+  String get collectionsEmpty => 'لا توجد مجموعات بعد';
+
+  @override
+  String get collectionsEmptySubtitle =>
+      'رتّب مستنداتك في مجموعات للوصول إليها بسهولة.';
+
+  @override
+  String get collectionsDeleteTitle => 'حذف المجموعة؟';
+
+  @override
+  String collectionsDeleteContent(String name) {
+    return 'حذف \"$name\"؟ لن يتم حذف المستندات الموجودة بداخلها.';
+  }
+
+  @override
+  String collectionsDocCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count مستندات',
+      one: 'مستند واحد',
+      zero: 'لا توجد مستندات',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get collectionsEdit => 'تعديل';
+
+  @override
+  String get collectionsDelete => 'حذف';
+
+  @override
+  String get collectionsAddDocuments => 'إضافة مستندات';
+
+  @override
+  String get collectionsAddNoneAvailable =>
+      'جميع المستندات موجودة بالفعل في هذه المجموعة.';
+
+  @override
+  String collectionsSelectedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'تم تحديد $count',
+      one: 'تم تحديد 1',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get collectionsAddButton => 'إضافة';
+
+  @override
+  String get collectionsDetailEmpty => 'لا توجد مستندات هنا';
+
+  @override
+  String get collectionsDetailEmptySubtitle =>
+      'أضف مستندات إلى هذه المجموعة لعرضها هنا.';
+
+  @override
+  String get collectionsSwipeToRemove => 'إزالة';
+
+  @override
+  String get collectionsDocTypeImported => 'ملف مستورد';
+
+  @override
+  String get collectionsDocTypeScanned => 'مستند ممسوح ضوئيًا';
+
+  @override
+  String get navCollections => 'المجموعات';
+
+  @override
   String get favouritesTitle => 'المفضلة';
 
   @override

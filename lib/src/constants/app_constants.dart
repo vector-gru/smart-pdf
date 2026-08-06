@@ -198,6 +198,117 @@ class AppConstants {
   static const double feedbackChevronSize = 20.0;
   static const double feedbackItemFontSize = 15.0;
   static const double feedbackSheetBorderRadius = 20.0;
+  // ── Collections ─────────────────────────────────────────────────────────────
+
+  // Dialog
+  static const double collectionDialogRadius = 16.0;
+  static const double collectionPickerLabelFontSize = 13.0;
+  static const double collectionPickerSpacing = 8.0;
+  static const double collectionColorSwatchSize = 30.0;
+  static const double collectionColorSwatchBorderWidth = 2.5;
+  static const double collectionColorSwatchShadowBlur = 6.0;
+  static const double collectionColorSwatchCheckSize = 16.0;
+  static const double collectionIconSwatchSize = 38.0;
+  static const double collectionIconSwatchRadius = 8.0;
+  static const double collectionIconSwatchIconSize = 20.0;
+  static const double collectionIconSwatchBorderWidth = 2.0;
+  static const int collectionPickerAnimMs = 150;
+
+  // Grid page
+  static const double collectionGridPaddingH = 16.0;
+  static const double collectionGridPaddingTop = 16.0;
+  static const double collectionGridPaddingBottom = 120.0;
+  static const double collectionGridSpacing = 12.0;
+  static const int collectionGridCrossAxisCount = 2;
+  static const double collectionGridChildAspectRatio = 0.88;
+  static const double collectionCardRadius = 16.0;
+  static const double collectionCardElevation = 2.0;
+
+  // Card header icon bubble
+  static const double collectionCardIconBubbleSize = 52.0;
+  static const double collectionCardIconSize = 28.0;
+
+  // Card menu button
+  static const double collectionCardMenuInset = 4.0;
+  static const double collectionCardMenuPadding = 6.0;
+  static const double collectionCardMenuIconSize = 18.0;
+  static const double collectionCardMenuTapRadius = 20.0;
+
+  // Card footer
+  static const double collectionCardFooterPaddingH = 12.0;
+  static const double collectionCardFooterPaddingTop = 10.0;
+  static const double collectionCardFooterPaddingBottom = 12.0;
+  static const double collectionCardNameFontSize = 14.0;
+  static const double collectionCardCountFontSize = 12.0;
+
+  // Empty state (collections page)
+  static const double collectionEmptyPaddingH = 40.0;
+  static const double collectionEmptyIconCircleSize = 90.0;
+  static const double collectionEmptyIconSize = 44.0;
+  static const double collectionEmptyTitleFontSize = 18.0;
+  static const double collectionEmptySubtitleFontSize = 14.0;
+  static const double collectionEmptySubtitleLineHeight = 1.4;
+  static const double collectionEmptyButtonPaddingH = 24.0;
+  static const double collectionEmptyButtonPaddingV = 12.0;
+  static const double collectionEmptyTitleGap = 20.0;
+  static const double collectionEmptySubtitleGap = 8.0;
+  static const double collectionEmptyButtonGap = 28.0;
+
+  // Bottom-sheet handle (reusable)
+  static const double sheetHandleWidth = 40.0;
+  static const double sheetHandleHeight = 4.0;
+  static const double sheetHandleRadius = 2.0;
+  static const double sheetHandleMarginV = 12.0;
+  static const double sheetRadius = 16.0;
+  static const double sheetRadiusLarge = 20.0;
+
+  // Detail page — sliver app bar
+  static const double collectionDetailExpandedHeight = 160.0;
+  static const double collectionDetailTitleFontSize = 17.0;
+  static const double collectionDetailBgIconSize = 72.0;
+  static const double collectionDetailHeaderPaddingL = 56.0;
+  static const double collectionDetailHeaderPaddingR = 16.0;
+  static const double collectionDetailHeaderPaddingB = 14.0;
+
+  // Detail page — swipe-to-remove background
+  static const double collectionSwipePaddingR = 24.0;
+  static const double collectionSwipeIconSize = 26.0;
+  static const double collectionSwipeLabelFontSize = 11.0;
+  static const double collectionSwipeLabelGap = 4.0;
+  static const double collectionDetailFabBottomPad = 64.0;
+
+  // Detail page — empty body
+  static const double collectionDetailEmptyPaddingH = 40.0;
+  static const double collectionDetailEmptyIconSize = 64.0;
+  static const double collectionDetailEmptyTitleFontSize = 17.0;
+  static const double collectionDetailEmptySubtitleFontSize = 14.0;
+  static const double collectionDetailEmptySubtitleLineHeight = 1.4;
+  static const double collectionDetailEmptyIconGap = 16.0;
+  static const double collectionDetailEmptyTitleGap = 8.0;
+  static const double collectionDetailEmptyButtonGap = 24.0;
+
+  // Add-documents sheet
+  static const double collectionSheetInitialSize = 0.65;
+  static const double collectionSheetMinSize = 0.45;
+  static const double collectionSheetMaxSize = 0.92;
+  static const double collectionSheetHeaderPaddingL = 20.0;
+  static const double collectionSheetHeaderPaddingR = 16.0;
+  static const double collectionSheetHeaderPaddingB = 12.0;
+  static const double collectionSheetTitleFontSize = 17.0;
+  static const double collectionSheetSelectedCountFontSize = 13.0;
+  static const double collectionSheetSaveButtonPaddingH = 16.0;
+  static const double collectionSheetSaveButtonPaddingV = 8.0;
+  static const double collectionSheetSpinnerSize = 20.0;
+  static const double collectionSheetSpinnerStrokeWidth = 2.0;
+  static const double collectionSheetDocTitleFontSize = 14.0;
+  static const double collectionSheetDocSubtitleFontSize = 12.0;
+
+  // Doc thumbnail (reusable in add-sheet)
+  static const double collectionDocThumbWidth = 40.0;
+  static const double collectionDocThumbHeight = 48.0;
+  static const double collectionDocThumbRadius = 6.0;
+  static const double collectionDocThumbIconSize = 22.0;
+
   // Share
   static const String playStoreUrl =
       'https://play.google.com/store/apps/details?id=com.hifivetech.smartpdf';

@@ -65,6 +65,39 @@
   "recentTitle": "Recentes",
   "recentEmpty": "Sem documentos recentes",
 
+  "navCollections": "Coleções",
+  "collectionsTitle": "Coleções",
+  "collectionsNewCollection": "Nova coleção",
+  "collectionsEditCollection": "Editar coleção",
+  "collectionsNameLabel": "Nome",
+  "collectionsColourLabel": "Cor",
+  "collectionsIconLabel": "Ícone",
+  "collectionsEmpty": "Sem coleções ainda",
+  "collectionsEmptySubtitle": "Agrupe os seus documentos em coleções para acesso mais fácil.",
+  "collectionsDeleteTitle": "Eliminar coleção?",
+  "collectionsDeleteContent": "Eliminar \"{name}\"? Os documentos dentro não serão eliminados.",
+  "@collectionsDeleteContent": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "collectionsDocCount": "{count, plural, =0{Sem documentos} =1{1 documento} other{{count} documentos}}",
+  "@collectionsDocCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "collectionsEdit": "Editar",
+  "collectionsDelete": "Eliminar",
+  "collectionsAddDocuments": "Adicionar documentos",
+  "collectionsAddNoneAvailable": "Todos os documentos já estão nesta coleção.",
+  "collectionsSelectedCount": "{count, plural, =1{1 selecionado} other{{count} selecionados}}",
+  "@collectionsSelectedCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "collectionsAddButton": "Adicionar",
+  "collectionsDetailEmpty": "Sem documentos aqui",
+  "collectionsDetailEmptySubtitle": "Adicione documentos a esta coleção para os ver aqui.",
+  "collectionsSwipeToRemove": "Remover",
+  "collectionsDocTypeImported": "Ficheiro importado",
+  "collectionsDocTypeScanned": "Documento digitalizado",
+
   "favouritesTitle": "Favoritos",
   "favouritesEmpty": "Sem favoritos ainda",
   "favouritesEmptySubtitle": "Marque um documento com estrela para vê-lo aqui",

@@ -143,6 +143,97 @@ class AppLocalizationsHi extends AppLocalizations {
   String get recentEmpty => 'कोई हालिया दस्तावेज़ नहीं';
 
   @override
+  String get collectionsTitle => 'संग्रह';
+
+  @override
+  String get collectionsNewCollection => 'नया संग्रह';
+
+  @override
+  String get collectionsEditCollection => 'संग्रह संपादित करें';
+
+  @override
+  String get collectionsNameLabel => 'नाम';
+
+  @override
+  String get collectionsColourLabel => 'रंग';
+
+  @override
+  String get collectionsIconLabel => 'आइकॉन';
+
+  @override
+  String get collectionsEmpty => 'अभी कोई संग्रह नहीं';
+
+  @override
+  String get collectionsEmptySubtitle =>
+      'आसान पहुँच के लिए अपने दस्तावेज़ों को संग्रह में समूहित करें।';
+
+  @override
+  String get collectionsDeleteTitle => 'संग्रह हटाएँ?';
+
+  @override
+  String collectionsDeleteContent(String name) {
+    return '\"$name\" हटाएँ? अंदर के दस्तावेज़ नहीं हटाए जाएँगे।';
+  }
+
+  @override
+  String collectionsDocCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count दस्तावेज़',
+      one: '1 दस्तावेज़',
+      zero: 'कोई दस्तावेज़ नहीं',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get collectionsEdit => 'संपादित करें';
+
+  @override
+  String get collectionsDelete => 'हटाएँ';
+
+  @override
+  String get collectionsAddDocuments => 'दस्तावेज़ जोड़ें';
+
+  @override
+  String get collectionsAddNoneAvailable =>
+      'सभी दस्तावेज़ पहले से इस संग्रह में हैं।';
+
+  @override
+  String collectionsSelectedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count चुने गए',
+      one: '1 चुना गया',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get collectionsAddButton => 'जोड़ें';
+
+  @override
+  String get collectionsDetailEmpty => 'यहाँ कोई दस्तावेज़ नहीं';
+
+  @override
+  String get collectionsDetailEmptySubtitle =>
+      'यहाँ देखने के लिए इस संग्रह में दस्तावेज़ जोड़ें।';
+
+  @override
+  String get collectionsSwipeToRemove => 'निकालें';
+
+  @override
+  String get collectionsDocTypeImported => 'आयातित फ़ाइल';
+
+  @override
+  String get collectionsDocTypeScanned => 'स्कैन किया गया दस्तावेज़';
+
+  @override
+  String get navCollections => 'संग्रह';
+
+  @override
   String get favouritesTitle => 'पसंदीदा';
 
   @override
