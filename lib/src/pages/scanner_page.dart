@@ -9,7 +9,8 @@ import 'package:path/path.dart' as p;
 import 'package:image/image.dart' as img;
 import '../constants/app_constants.dart';
 import '../widgets/camera_capture_page.dart';
-import '../widgets/color_filter_sheet.dart';
+import '../widgets/color_filter_sheet.dart'
+    show ColorFilterSheet, colorMatrixForStrength;
 import 'crop_page.dart';
 import 'reorder_page.dart';
 import 'smart_edit_page.dart';
@@ -571,15 +572,19 @@ class _ScannerPageState extends State<ScannerPage> {
       builder: (ctx) => ColorFilterSheet(
         imagePath: path,
         originalPath: _originals[path] ?? path,
-        onApply: (filterName, applyToAll) {
+        onApply: (filterName, strength, applyToAll) {
           Navigator.pop(ctx);
-          _applyColorFilter(filterName, applyToAll);
+          _applyColorFilter(filterName, strength, applyToAll);
         },
       ),
     );
   }
 
-  void _applyColorFilter(String filterName, bool applyToAll) async {
+  void _applyColorFilter(
+    String filterName,
+    double strength,
+    bool applyToAll,
+  ) async {
     final indices = applyToAll
         ? List.generate(_images.length, (i) => i)
         : [_currentPage];
@@ -591,7 +596,7 @@ class _ScannerPageState extends State<ScannerPage> {
       }
       final file = File(path);
 
-      if (filterName == 'default') {
+      if (filterName == 'default' || strength == 0.0) {
         await File(_originals[path]!).copy(path);
         await FileImage(file).evict();
         _bumpVersion(path);
@@ -603,10 +608,9 @@ class _ScannerPageState extends State<ScannerPage> {
       if (decoded == null) continue;
 
       // Apply the identical 5×4 color matrix that the Flutter ColorFilter
-      // preview uses. Flutter's matrix format is row-major [R,G,B,A] with a
-      // translation column (index 4, 9, 14, 19) in the 0-255 range.
+      // preview uses, scaled by [strength].
       // Result channel = m[0]*R + m[1]*G + m[2]*B + m[3]*A + m[4]  (clamped 0-255)
-      final matrix = _colorMatrixFor(filterName);
+      final matrix = colorMatrixForStrength(filterName, strength);
       final processed = img.Image(width: decoded.width, height: decoded.height);
 
       for (int y = 0; y < decoded.height; y++) {
@@ -659,131 +663,6 @@ class _ScannerPageState extends State<ScannerPage> {
       _bumpVersion(path);
     }
     setState(() {});
-  }
-
-  /// Returns the same 5×4 matrix (20 values, row-major) used by
-  /// [colorFilterFor] in color_filter_sheet.dart so preview == output.
-  static List<double> _colorMatrixFor(String id) {
-    switch (id) {
-      case 'magic1':
-        return [
-          1.9,
-          0,
-          0,
-          0,
-          -50,
-          0,
-          1.9,
-          0,
-          0,
-          -50,
-          0,
-          0,
-          1.9,
-          0,
-          -50,
-          0,
-          0,
-          0,
-          1,
-          0,
-        ];
-      case 'magic2':
-        return [
-          0.77,
-          0.63,
-          0.24,
-          0,
-          -40,
-          0.07,
-          1.53,
-          0.06,
-          0,
-          -40,
-          0.02,
-          0.18,
-          1.44,
-          0,
-          -40,
-          0,
-          0,
-          0,
-          1,
-          0,
-        ];
-      case 'bw1':
-        return [
-          0.299,
-          0.587,
-          0.114,
-          0,
-          60,
-          0.299,
-          0.587,
-          0.114,
-          0,
-          60,
-          0.299,
-          0.587,
-          0.114,
-          0,
-          60,
-          0,
-          0,
-          0,
-          1,
-          0,
-        ];
-      case 'bw2':
-        return [
-          1.5,
-          1.5,
-          1.5,
-          0,
-          -200,
-          1.5,
-          1.5,
-          1.5,
-          0,
-          -200,
-          1.5,
-          1.5,
-          1.5,
-          0,
-          -200,
-          0,
-          0,
-          0,
-          1,
-          0,
-        ];
-      case 'gray':
-        return [
-          0.299,
-          0.587,
-          0.114,
-          0,
-          0,
-          0.299,
-          0.587,
-          0.114,
-          0,
-          0,
-          0.299,
-          0.587,
-          0.114,
-          0,
-          0,
-          0,
-          0,
-          0,
-          1,
-          0,
-        ];
-      default:
-        // Identity — no change
-        return [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0];
-    }
   }
 
   void _rotateCurrent() async {
