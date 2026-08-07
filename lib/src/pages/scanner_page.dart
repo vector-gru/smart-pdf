@@ -721,11 +721,17 @@ class _ScannerPageState extends State<ScannerPage> {
       );
     }
     if (!mounted) return;
+
+    // CropPage warps from originalPath.  We always pass the current working
+    // file so that any previously-applied colour filter is baked into the
+    // crop output — the user sees and keeps what they already edited.
+    // The true pristine original (_originals) is unaffected and is still used
+    // by _applyColorFilter for re-applying colour on top of subsequent crops.
     final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => CropPage(
           workingPath: workingPath,
-          originalPath: _originals[workingPath]!,
+          originalPath: workingPath,
           currentPage: _currentPage,
           totalPages: _images.length,
         ),
@@ -734,7 +740,7 @@ class _ScannerPageState extends State<ScannerPage> {
     if (result == true) {
       // Snapshot the freshly-cropped working file as the new colour baseline.
       // Subsequent colour-filter applications will read from this snapshot so
-      // they always apply on top of the crop rather than the pristine original.
+      // they always compose on top of the current crop.
       _cropBaselines[workingPath] = await _saveToTemp(
         workingPath,
         prefix: '_crop_',
@@ -747,17 +753,19 @@ class _ScannerPageState extends State<ScannerPage> {
   void _showColorSheet() {
     if (_images.isEmpty) return;
     final path = _images[_currentPage];
-    // Use the crop baseline (post-crop image) as the preview source when one
-    // exists, so the colour-filter thumbnails and live preview reflect the
-    // already-cropped image rather than the pristine original.
-    final previewPath = _cropBaselines[path] ?? path;
+    // The sheet's originalPath drives both the live preview and the filter
+    // thumbnails.  When a crop has already been applied in this session we use
+    // the crop baseline (post-crop, pre-colour snapshot) so the previews show
+    // the cropped image.  Without a crop baseline we fall back to the true
+    // pristine original as before.
+    final sheetOriginalPath = _cropBaselines[path] ?? _originals[path] ?? path;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       builder: (ctx) => ColorFilterSheet(
-        imagePath: previewPath,
-        originalPath: _originals[path] ?? path,
+        imagePath: path,
+        originalPath: sheetOriginalPath,
         onApply: (filterName, strength, applyToAll) {
           Navigator.pop(ctx);
           _applyColorFilter(filterName, strength, applyToAll);
