@@ -405,6 +405,62 @@ class AppLocalizationsAr extends AppLocalizations {
   String get scannerSelectPhotos => 'اختر من الصور';
 
   @override
+  String get scannerScanTypeTitle => 'نوع المسح';
+
+  @override
+  String get scannerScanTypeStandard => 'صفحة عادية';
+
+  @override
+  String get scannerScanTypeStandardSub => 'صورة واحدة لكل صفحة';
+
+  @override
+  String get scannerScanTypeIdCard => 'بطاقة هوية / رخصة قيادة';
+
+  @override
+  String get scannerScanTypeIdCardSub => 'الوجه الأمامي والخلفي في صفحة واحدة';
+
+  @override
+  String get scannerIdCardFront => 'التقاط الوجه الأمامي';
+
+  @override
+  String get scannerIdCardBack => 'التقاط الوجه الخلفي';
+
+  @override
+  String get scannerIdCardSelectFront => 'اختر الوجه الأمامي';
+
+  @override
+  String get scannerIdCardSelectBack => 'اختر الوجه الخلفي';
+
+  @override
+  String get scannerIdCardInstructions =>
+      'ستلتقط الوجه الأمامي ثم الخلفي.\nسيتم دمجهما في صفحة واحدة.';
+
+  @override
+  String get scannerIdCardGalleryInstructions =>
+      'اختر الوجه الأمامي أولاً ثم الخلفي.\nسيتم دمجهما في صفحة واحدة.';
+
+  @override
+  String get scannerAddIdCard => 'إضافة بطاقة هوية / رخصة قيادة';
+
+  @override
+  String get scannerIdCardLayoutTitle => 'تخطيط البطاقة';
+
+  @override
+  String get scannerIdCardLayoutHorizontal => 'جنبًا إلى جنب';
+
+  @override
+  String get scannerIdCardLayoutVertical => 'مكدّس';
+
+  @override
+  String get scannerIdCardRotateFront => 'تدوير الوجه الأمامي';
+
+  @override
+  String get scannerIdCardRotateBack => 'تدوير الوجه الخلفي';
+
+  @override
+  String get scannerIdCardDone => 'تم';
+
+  @override
   String get scannerDeletePageTitle => 'حذف الصفحة؟';
 
   @override

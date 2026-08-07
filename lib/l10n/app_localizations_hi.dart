@@ -410,6 +410,62 @@ class AppLocalizationsHi extends AppLocalizations {
   String get scannerSelectPhotos => 'फ़ोटो से चुनें';
 
   @override
+  String get scannerScanTypeTitle => 'स्कैन प्रकार';
+
+  @override
+  String get scannerScanTypeStandard => 'सामान्य पृष्ठ';
+
+  @override
+  String get scannerScanTypeStandardSub => 'प्रति पृष्ठ एक छवि';
+
+  @override
+  String get scannerScanTypeIdCard => 'पहचान पत्र / लाइसेंस';
+
+  @override
+  String get scannerScanTypeIdCardSub => 'आगे और पीछे एक ही पृष्ठ पर';
+
+  @override
+  String get scannerIdCardFront => 'आगे की तरफ कैप्चर करें';
+
+  @override
+  String get scannerIdCardBack => 'पीछे की तरफ कैप्चर करें';
+
+  @override
+  String get scannerIdCardSelectFront => 'आगे की तरफ चुनें';
+
+  @override
+  String get scannerIdCardSelectBack => 'पीछे की तरफ चुनें';
+
+  @override
+  String get scannerIdCardInstructions =>
+      'पहले आगे की तरफ, फिर पीछे की तरफ कैप्चर करें।\nदोनों एक ही पृष्ठ पर जोड़े जाएंगे।';
+
+  @override
+  String get scannerIdCardGalleryInstructions =>
+      'पहले आगे की छवि चुनें, फिर पीछे की।\nदोनों एक ही पृष्ठ पर जोड़े जाएंगे।';
+
+  @override
+  String get scannerAddIdCard => 'पहचान पत्र / लाइसेंस जोड़ें';
+
+  @override
+  String get scannerIdCardLayoutTitle => 'कार्ड लेआउट';
+
+  @override
+  String get scannerIdCardLayoutHorizontal => 'साथ-साथ';
+
+  @override
+  String get scannerIdCardLayoutVertical => 'एक के ऊपर एक';
+
+  @override
+  String get scannerIdCardRotateFront => 'आगे घुमाएँ';
+
+  @override
+  String get scannerIdCardRotateBack => 'पीछे घुमाएँ';
+
+  @override
+  String get scannerIdCardDone => 'हो गया';
+
+  @override
   String get scannerDeletePageTitle => 'पृष्ठ हटाएँ?';
 
   @override

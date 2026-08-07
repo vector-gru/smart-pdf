@@ -412,6 +412,62 @@ class AppLocalizationsFr extends AppLocalizations {
   String get scannerSelectPhotos => 'Sélectionner depuis les photos';
 
   @override
+  String get scannerScanTypeTitle => 'Type de numérisation';
+
+  @override
+  String get scannerScanTypeStandard => 'Page standard';
+
+  @override
+  String get scannerScanTypeStandardSub => 'Une image par page';
+
+  @override
+  String get scannerScanTypeIdCard => 'Carte d\'identité / Permis';
+
+  @override
+  String get scannerScanTypeIdCardSub => 'Recto et verso sur une page';
+
+  @override
+  String get scannerIdCardFront => 'Capturer le recto';
+
+  @override
+  String get scannerIdCardBack => 'Capturer le verso';
+
+  @override
+  String get scannerIdCardSelectFront => 'Sélectionner le recto';
+
+  @override
+  String get scannerIdCardSelectBack => 'Sélectionner le verso';
+
+  @override
+  String get scannerIdCardInstructions =>
+      'Vous allez capturer le recto, puis le verso.\nLes deux seront combinés sur une page.';
+
+  @override
+  String get scannerIdCardGalleryInstructions =>
+      'Sélectionnez d\'abord le recto, puis le verso.\nLes deux seront combinés sur une page.';
+
+  @override
+  String get scannerAddIdCard => 'Ajouter carte d\'identité / permis';
+
+  @override
+  String get scannerIdCardLayoutTitle => 'Mise en page';
+
+  @override
+  String get scannerIdCardLayoutHorizontal => 'Côte à côte';
+
+  @override
+  String get scannerIdCardLayoutVertical => 'Empilé';
+
+  @override
+  String get scannerIdCardRotateFront => 'Pivoter recto';
+
+  @override
+  String get scannerIdCardRotateBack => 'Pivoter verso';
+
+  @override
+  String get scannerIdCardDone => 'Terminer';
+
+  @override
   String get scannerDeletePageTitle => 'Supprimer la page ?';
 
   @override

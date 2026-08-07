@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'package:smart_pdf/l10n/app_localizations.dart';
 import 'widgets/app_drawer.dart';
-import 'widgets/camera_capture_page.dart';
+import 'widgets/camera_capture_page.dart'
+    show CameraCapturePage, IdCardCameraPage, IdCardCameraResult;
 import 'constants/app_colors.dart';
 import 'constants/app_constants.dart';
 import 'db/app_db.dart';
@@ -16,10 +17,10 @@ import 'pages/files_page.dart';
 import 'db/collections_notifier.dart';
 import 'pages/collections_page.dart';
 import 'pages/favourite_page.dart';
-import 'pages/scanner_page.dart'
-    show ScannerPage, ScannerResult, CameraCapturePage;
+import 'pages/scanner_page.dart' show ScannerPage, ScannerResult;
 import 'pages/viewer_page.dart';
 import 'package:image_picker/image_picker.dart';
+import 'pages/id_card_edit_page.dart';
 
 class AppShell extends StatefulWidget {
   final AppDatabase db;
@@ -264,7 +265,7 @@ class _ScanFab extends StatelessWidget {
               borderRadius: const BorderRadius.horizontal(
                 left: Radius.circular(AppConstants.fabRadius),
               ),
-              onTap: () => _openGallery(context),
+              onTap: () => _showScanTypeSheet(context, useCamera: false),
               child: const Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: AppConstants.fabPaddingH,
@@ -289,7 +290,7 @@ class _ScanFab extends StatelessWidget {
               borderRadius: const BorderRadius.horizontal(
                 right: Radius.circular(AppConstants.fabRadius),
               ),
-              onTap: () => _openCamera(context),
+              onTap: () => _showScanTypeSheet(context, useCamera: true),
               child: const Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: AppConstants.fabPaddingH,
@@ -307,6 +308,83 @@ class _ScanFab extends StatelessWidget {
       ),
     );
   }
+
+  /// Shows a bottom sheet letting the user pick Standard or ID Card scan mode,
+  /// then proceeds with [useCamera] (camera) or gallery accordingly.
+  void _showScanTypeSheet(BuildContext context, {required bool useCamera}) {
+    final l10n = AppLocalizations.of(context)!;
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Sheet handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Text(
+                l10n.scannerScanTypeTitle,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Standard
+              _ScanTypeOption(
+                icon: Icons.description_outlined,
+                title: l10n.scannerScanTypeStandard,
+                subtitle: l10n.scannerScanTypeStandardSub,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  if (useCamera) {
+                    _openCamera(context);
+                  } else {
+                    _openGallery(context);
+                  }
+                },
+              ),
+              const SizedBox(height: 8),
+              // ID Card
+              _ScanTypeOption(
+                icon: Icons.credit_card,
+                title: l10n.scannerScanTypeIdCard,
+                subtitle: l10n.scannerScanTypeIdCardSub,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  if (useCamera) {
+                    _openIdCardCamera(context);
+                  } else {
+                    _openIdCardGallery(context);
+                  }
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─── Standard scan ───────────────────────────────────────────────────────
 
   void _openGallery(BuildContext context) async {
     final images = await ImagePicker().pickMultiImage(imageQuality: 90);
@@ -331,6 +409,101 @@ class _ScanFab extends StatelessWidget {
       _navigate(context, [path]);
     } catch (_) {}
   }
+
+  // ─── ID Card scan ─────────────────────────────────────────────────────────
+
+  /// Camera flow: single session, front then back, then ID card editor.
+  void _openIdCardCamera(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      final cameras = await availableCameras();
+      if (cameras.isEmpty) return;
+      final rear = cameras.firstWhere(
+        (c) => c.lensDirection == CameraLensDirection.back,
+        orElse: () => cameras.first,
+      );
+      if (!context.mounted) return;
+
+      final shotResult = await Navigator.of(context).push<IdCardCameraResult>(
+        MaterialPageRoute(
+          builder: (_) => IdCardCameraPage(
+            camera: rear,
+            frontLabel: l10n.scannerIdCardFront,
+            backLabel: l10n.scannerIdCardBack,
+          ),
+        ),
+      );
+      if (shotResult == null || !context.mounted) return;
+      await _openIdCardEditor(
+        context,
+        shotResult.frontPath,
+        shotResult.backPath,
+      );
+    } catch (_) {}
+  }
+
+  /// Gallery flow: picks up to 2 images at once.
+  ///   - 2 selected → front + back immediately.
+  ///   - 1 selected → prompt for the second separately.
+  void _openIdCardGallery(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(l10n.scannerIdCardGalleryInstructions),
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+    await Future.delayed(const Duration(milliseconds: 400));
+
+    final picked = await ImagePicker().pickMultiImage(imageQuality: 90);
+    if (picked.isEmpty || !context.mounted) return;
+
+    String frontPath = picked.first.path;
+    String backPath;
+
+    if (picked.length >= 2) {
+      backPath = picked[1].path;
+    } else {
+      // Only one — ask for the second
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.scannerIdCardSelectBack),
+          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      await Future.delayed(const Duration(milliseconds: 400));
+      final backFile = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 90,
+      );
+      if (backFile == null || !context.mounted) return;
+      backPath = backFile.path;
+    }
+
+    await _openIdCardEditor(context, frontPath, backPath);
+  }
+
+  /// Opens the ID card editor for layout + rotation, then navigates to the scanner.
+  Future<void> _openIdCardEditor(
+    BuildContext context,
+    String frontPath,
+    String backPath,
+  ) async {
+    if (!context.mounted) return;
+    final editResult = await Navigator.of(context).push<IdCardEditResult>(
+      MaterialPageRoute(
+        builder: (_) =>
+            IdCardEditPage(frontPath: frontPath, backPath: backPath),
+      ),
+    );
+    if (editResult == null || !context.mounted) return;
+    _navigate(context, [editResult.compositePath]);
+  }
+
+  // ─── Navigate to ScannerPage ──────────────────────────────────────────────
 
   void _navigate(BuildContext context, List<String> paths) async {
     if (!context.mounted) return;
@@ -358,5 +531,69 @@ class _ScanFab extends StatelessWidget {
         );
       }
     }
+  }
+}
+
+/// A tappable card used inside the scan-type bottom sheet.
+class _ScanTypeOption extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _ScanTypeOption({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade200),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: AppColors.primaryMuted.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: AppColors.primaryMuted, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: Colors.grey[400]),
+          ],
+        ),
+      ),
+    );
   }
 }

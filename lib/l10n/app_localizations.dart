@@ -790,6 +790,114 @@ abstract class AppLocalizations {
   /// **'Select from photos'**
   String get scannerSelectPhotos;
 
+  /// No description provided for @scannerScanTypeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan type'**
+  String get scannerScanTypeTitle;
+
+  /// No description provided for @scannerScanTypeStandard.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard page'**
+  String get scannerScanTypeStandard;
+
+  /// No description provided for @scannerScanTypeStandardSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Single image per page'**
+  String get scannerScanTypeStandardSub;
+
+  /// No description provided for @scannerScanTypeIdCard.
+  ///
+  /// In en, this message translates to:
+  /// **'ID Card / Licence'**
+  String get scannerScanTypeIdCard;
+
+  /// No description provided for @scannerScanTypeIdCardSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Front & back on one page'**
+  String get scannerScanTypeIdCardSub;
+
+  /// No description provided for @scannerIdCardFront.
+  ///
+  /// In en, this message translates to:
+  /// **'Capture front side'**
+  String get scannerIdCardFront;
+
+  /// No description provided for @scannerIdCardBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Capture back side'**
+  String get scannerIdCardBack;
+
+  /// No description provided for @scannerIdCardSelectFront.
+  ///
+  /// In en, this message translates to:
+  /// **'Select front side'**
+  String get scannerIdCardSelectFront;
+
+  /// No description provided for @scannerIdCardSelectBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Select back side'**
+  String get scannerIdCardSelectBack;
+
+  /// No description provided for @scannerIdCardInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ll capture the front, then the back.\nBoth will be combined into one page.'**
+  String get scannerIdCardInstructions;
+
+  /// No description provided for @scannerIdCardGalleryInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Select the front image first, then the back.\nBoth will be combined into one page.'**
+  String get scannerIdCardGalleryInstructions;
+
+  /// No description provided for @scannerAddIdCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Add ID Card / Licence'**
+  String get scannerAddIdCard;
+
+  /// No description provided for @scannerIdCardLayoutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'ID Card Layout'**
+  String get scannerIdCardLayoutTitle;
+
+  /// No description provided for @scannerIdCardLayoutHorizontal.
+  ///
+  /// In en, this message translates to:
+  /// **'Side by side'**
+  String get scannerIdCardLayoutHorizontal;
+
+  /// No description provided for @scannerIdCardLayoutVertical.
+  ///
+  /// In en, this message translates to:
+  /// **'Stacked'**
+  String get scannerIdCardLayoutVertical;
+
+  /// No description provided for @scannerIdCardRotateFront.
+  ///
+  /// In en, this message translates to:
+  /// **'Rotate front'**
+  String get scannerIdCardRotateFront;
+
+  /// No description provided for @scannerIdCardRotateBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Rotate back'**
+  String get scannerIdCardRotateBack;
+
+  /// No description provided for @scannerIdCardDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get scannerIdCardDone;
+
   /// No description provided for @scannerDeletePageTitle.
   ///
   /// In en, this message translates to:

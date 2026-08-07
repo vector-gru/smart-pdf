@@ -410,6 +410,62 @@ class AppLocalizationsEs extends AppLocalizations {
   String get scannerSelectPhotos => 'Seleccionar de fotos';
 
   @override
+  String get scannerScanTypeTitle => 'Tipo de escaneo';
+
+  @override
+  String get scannerScanTypeStandard => 'Página estándar';
+
+  @override
+  String get scannerScanTypeStandardSub => 'Una imagen por página';
+
+  @override
+  String get scannerScanTypeIdCard => 'DNI / Carné de conducir';
+
+  @override
+  String get scannerScanTypeIdCardSub => 'Anverso y reverso en una página';
+
+  @override
+  String get scannerIdCardFront => 'Capturar anverso';
+
+  @override
+  String get scannerIdCardBack => 'Capturar reverso';
+
+  @override
+  String get scannerIdCardSelectFront => 'Seleccionar anverso';
+
+  @override
+  String get scannerIdCardSelectBack => 'Seleccionar reverso';
+
+  @override
+  String get scannerIdCardInstructions =>
+      'Capturarás el anverso y luego el reverso.\nAmbos se combinarán en una sola página.';
+
+  @override
+  String get scannerIdCardGalleryInstructions =>
+      'Selecciona primero el anverso y luego el reverso.\nAmbos se combinarán en una sola página.';
+
+  @override
+  String get scannerAddIdCard => 'Añadir DNI / Carné de conducir';
+
+  @override
+  String get scannerIdCardLayoutTitle => 'Diseño de la tarjeta';
+
+  @override
+  String get scannerIdCardLayoutHorizontal => 'Uno al lado del otro';
+
+  @override
+  String get scannerIdCardLayoutVertical => 'Apilado';
+
+  @override
+  String get scannerIdCardRotateFront => 'Girar anverso';
+
+  @override
+  String get scannerIdCardRotateBack => 'Girar reverso';
+
+  @override
+  String get scannerIdCardDone => 'Listo';
+
+  @override
   String get scannerDeletePageTitle => '¿Eliminar página?';
 
   @override

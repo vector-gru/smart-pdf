@@ -195,5 +195,23 @@
   "licensesViewAll": "Voir toutes les licences",
   "licensesLearnMore": "En savoir plus sur les licences open source",
 
+  "scannerScanTypeTitle": "Type de numérisation",
+  "scannerScanTypeStandard": "Page standard",
+  "scannerScanTypeStandardSub": "Une image par page",
+  "scannerScanTypeIdCard": "Carte d'identité / Permis",
+  "scannerScanTypeIdCardSub": "Recto et verso sur une page",
+  "scannerIdCardFront": "Capturer le recto",
+  "scannerIdCardBack": "Capturer le verso",
+  "scannerIdCardSelectFront": "Sélectionner le recto",
+  "scannerIdCardSelectBack": "Sélectionner le verso",
+  "scannerIdCardInstructions": "Vous allez capturer le recto, puis le verso.\nLes deux seront combinés sur une page.",
+  "scannerIdCardGalleryInstructions": "Sélectionnez d'abord le recto, puis le verso.\nLes deux seront combinés sur une page.",
+  "scannerAddIdCard": "Ajouter carte d'identité / permis",
+  "scannerIdCardLayoutTitle": "Mise en page",
+  "scannerIdCardLayoutHorizontal": "Côte à côte",
+  "scannerIdCardLayoutVertical": "Empilé",
+  "scannerIdCardRotateFront": "Pivoter recto",
+  "scannerIdCardRotateBack": "Pivoter verso",
+  "scannerIdCardDone": "Terminer",
   "couldNotOpenPdf": "Impossible d'ouvrir le PDF :\n{error}"
 }

@@ -8,10 +8,12 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:image/image.dart' as img;
 import '../constants/app_constants.dart';
-import '../widgets/camera_capture_page.dart';
+import '../widgets/camera_capture_page.dart'
+    show CameraCapturePage, IdCardCameraPage, IdCardCameraResult;
 import '../widgets/color_filter_sheet.dart'
     show ColorFilterSheet, colorMatrixForStrength;
 import 'crop_page.dart';
+import 'id_card_edit_page.dart';
 import 'reorder_page.dart';
 import 'smart_edit_page.dart';
 
@@ -56,6 +58,13 @@ class _ScannerPageState extends State<ScannerPage> {
   final FocusNode _titleFocus = FocusNode();
   final Map<String, int> _imageVersions = {};
   final Map<String, String> _originals = {};
+
+  /// Maps each working image path to a snapshot taken immediately after the
+  /// last crop (but before any colour filter).  Colour-filter operations read
+  /// from this baseline so they always apply on top of the cropped image
+  /// rather than on the pristine original.  When no crop has been done the
+  /// map has no entry and _originals is used as the fallback.
+  final Map<String, String> _cropBaselines = {};
 
   @override
   void initState() {
@@ -432,31 +441,87 @@ class _ScannerPageState extends State<ScannerPage> {
     final l10n = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.camera_alt_outlined),
-              title: Text(l10n.scannerTakePhoto),
-              onTap: () {
-                Navigator.pop(ctx);
-                _pickFromCamera();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.image_outlined),
-              title: Text(l10n.scannerSelectPhotos),
-              onTap: () {
-                Navigator.pop(ctx);
-                _pickFromGallery();
-              },
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Sheet handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              // Standard – camera
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                leading: const Icon(Icons.camera_alt_outlined),
+                title: Text(l10n.scannerTakePhoto),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickFromCamera();
+                },
+              ),
+              // Standard – gallery
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                leading: const Icon(Icons.image_outlined),
+                title: Text(l10n.scannerSelectPhotos),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickFromGallery();
+                },
+              ),
+              const Divider(height: 1),
+              const SizedBox(height: 4),
+              // ID Card – camera
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                leading: const Icon(Icons.credit_card),
+                title: Text(l10n.scannerScanTypeIdCard),
+                subtitle: Text(
+                  l10n.scannerIdCardInstructions,
+                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                ),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickIdCardFromCamera();
+                },
+              ),
+              // ID Card – gallery
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                leading: const Icon(Icons.photo_library_outlined),
+                title: Text(l10n.scannerAddIdCard),
+                subtitle: Text(
+                  l10n.scannerIdCardGalleryInstructions,
+                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                ),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickIdCardFromGallery();
+                },
+              ),
+              const SizedBox(height: 4),
+            ],
+          ),
         ),
       ),
     );
   }
+
+  // ─── Standard pick helpers ────────────────────────────────────────────────
 
   Future<void> _pickFromCamera() async {
     try {
@@ -491,6 +556,116 @@ class _ScannerPageState extends State<ScannerPage> {
     }
     setState(() => _currentPage = _images.length - 1);
     _animateToCurrentPage();
+  }
+
+  // ─── ID Card pick helpers ─────────────────────────────────────────────────
+
+  /// Camera flow: single session that captures front then back, then opens
+  /// the ID card editor for layout + rotation tweaks.
+  Future<void> _pickIdCardFromCamera() async {
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      final cameras = await availableCameras();
+      if (cameras.isEmpty) return;
+      final rear = cameras.firstWhere(
+        (c) => c.lensDirection == CameraLensDirection.back,
+        orElse: () => cameras.first,
+      );
+      if (!mounted) return;
+
+      final result = await Navigator.of(context).push<IdCardCameraResult>(
+        MaterialPageRoute(
+          builder: (_) => IdCardCameraPage(
+            camera: rear,
+            frontLabel: l10n.scannerIdCardFront,
+            backLabel: l10n.scannerIdCardBack,
+          ),
+        ),
+      );
+      if (result == null || !mounted) return;
+
+      await _openIdCardEditor(result.frontPath, result.backPath);
+    } catch (_) {}
+  }
+
+  /// Gallery flow: lets the user select 1 or 2 images.
+  ///   - 2 selected at once → treat as front + back immediately.
+  ///   - 1 selected         → prompt for the second image separately.
+  Future<void> _pickIdCardFromGallery() async {
+    final l10n = AppLocalizations.of(context)!;
+    if (!mounted) return;
+
+    // Ask for up to 2 images at once
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(l10n.scannerIdCardGalleryInstructions),
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+    await Future.delayed(const Duration(milliseconds: 400));
+
+    final picked = await _picker.pickMultiImage(imageQuality: 90);
+    if (picked.isEmpty || !mounted) return;
+
+    String frontPath = picked.first.path;
+    String backPath;
+
+    if (picked.length >= 2) {
+      // User selected both at once — use first as front, second as back
+      backPath = picked[1].path;
+    } else {
+      // Only one selected — ask for the second
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.scannerIdCardSelectBack),
+          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      await Future.delayed(const Duration(milliseconds: 400));
+      final backFile = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 90,
+      );
+      if (backFile == null || !mounted) return;
+      backPath = backFile.path;
+    }
+
+    await _openIdCardEditor(frontPath, backPath);
+  }
+
+  /// Opens the ID card editor for layout + rotation adjustments, then
+  /// adds the resulting composite as a new page.
+  Future<void> _openIdCardEditor(String frontPath, String backPath) async {
+    if (!mounted) return;
+    final result = await Navigator.of(context).push<IdCardEditResult>(
+      MaterialPageRoute(
+        builder: (_) =>
+            IdCardEditPage(frontPath: frontPath, backPath: backPath),
+      ),
+    );
+    if (result == null || !mounted) return;
+    await _addIdCardComposite(result.compositePath);
+  }
+
+  /// Saves a composited ID card image as a new scanner page.
+  Future<void> _addIdCardComposite(String compositePath) async {
+    try {
+      final saved = await _saveToTemp(compositePath);
+      _originals[saved] = await _saveToTemp(compositePath, prefix: '_orig_');
+      setState(() {
+        _images.add(saved);
+        _currentPage = _images.length - 1;
+      });
+      _animateToCurrentPage();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not add ID card page.')),
+        );
+      }
+    }
   }
 
   void _animateToCurrentPage() {
@@ -557,6 +732,13 @@ class _ScannerPageState extends State<ScannerPage> {
       ),
     );
     if (result == true) {
+      // Snapshot the freshly-cropped working file as the new colour baseline.
+      // Subsequent colour-filter applications will read from this snapshot so
+      // they always apply on top of the crop rather than the pristine original.
+      _cropBaselines[workingPath] = await _saveToTemp(
+        workingPath,
+        prefix: '_crop_',
+      );
       _bumpVersion(workingPath);
       setState(() {});
     }
@@ -565,12 +747,16 @@ class _ScannerPageState extends State<ScannerPage> {
   void _showColorSheet() {
     if (_images.isEmpty) return;
     final path = _images[_currentPage];
+    // Use the crop baseline (post-crop image) as the preview source when one
+    // exists, so the colour-filter thumbnails and live preview reflect the
+    // already-cropped image rather than the pristine original.
+    final previewPath = _cropBaselines[path] ?? path;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       builder: (ctx) => ColorFilterSheet(
-        imagePath: path,
+        imagePath: previewPath,
         originalPath: _originals[path] ?? path,
         onApply: (filterName, strength, applyToAll) {
           Navigator.pop(ctx);
@@ -596,14 +782,20 @@ class _ScannerPageState extends State<ScannerPage> {
       }
       final file = File(path);
 
+      // The colour baseline is the post-crop snapshot when a crop has been
+      // performed, otherwise the pristine original.  This ensures:
+      //   • colour is always applied on top of any existing crop, and
+      //   • "Default" restores to the cropped (but uncoloured) state.
+      final baselinePath = _cropBaselines[path] ?? _originals[path]!;
+
       if (filterName == 'default' || strength == 0.0) {
-        await File(_originals[path]!).copy(path);
+        await File(baselinePath).copy(path);
         await FileImage(file).evict();
         _bumpVersion(path);
         continue;
       }
 
-      final bytes = await File(_originals[path]!).readAsBytes();
+      final bytes = await File(baselinePath).readAsBytes();
       final decoded = img.decodeImage(bytes);
       if (decoded == null) continue;
 

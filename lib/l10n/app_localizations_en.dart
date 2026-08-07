@@ -405,6 +405,62 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scannerSelectPhotos => 'Select from photos';
 
   @override
+  String get scannerScanTypeTitle => 'Scan type';
+
+  @override
+  String get scannerScanTypeStandard => 'Standard page';
+
+  @override
+  String get scannerScanTypeStandardSub => 'Single image per page';
+
+  @override
+  String get scannerScanTypeIdCard => 'ID Card / Licence';
+
+  @override
+  String get scannerScanTypeIdCardSub => 'Front & back on one page';
+
+  @override
+  String get scannerIdCardFront => 'Capture front side';
+
+  @override
+  String get scannerIdCardBack => 'Capture back side';
+
+  @override
+  String get scannerIdCardSelectFront => 'Select front side';
+
+  @override
+  String get scannerIdCardSelectBack => 'Select back side';
+
+  @override
+  String get scannerIdCardInstructions =>
+      'You\'ll capture the front, then the back.\nBoth will be combined into one page.';
+
+  @override
+  String get scannerIdCardGalleryInstructions =>
+      'Select the front image first, then the back.\nBoth will be combined into one page.';
+
+  @override
+  String get scannerAddIdCard => 'Add ID Card / Licence';
+
+  @override
+  String get scannerIdCardLayoutTitle => 'ID Card Layout';
+
+  @override
+  String get scannerIdCardLayoutHorizontal => 'Side by side';
+
+  @override
+  String get scannerIdCardLayoutVertical => 'Stacked';
+
+  @override
+  String get scannerIdCardRotateFront => 'Rotate front';
+
+  @override
+  String get scannerIdCardRotateBack => 'Rotate back';
+
+  @override
+  String get scannerIdCardDone => 'Done';
+
+  @override
   String get scannerDeletePageTitle => 'Delete page?';
 
   @override

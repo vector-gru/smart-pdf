@@ -410,6 +410,63 @@ class AppLocalizationsPt extends AppLocalizations {
   String get scannerSelectPhotos => 'Selecionar das fotos';
 
   @override
+  String get scannerScanTypeTitle => 'Tipo de digitalização';
+
+  @override
+  String get scannerScanTypeStandard => 'Página normal';
+
+  @override
+  String get scannerScanTypeStandardSub => 'Uma imagem por página';
+
+  @override
+  String get scannerScanTypeIdCard =>
+      'Bilhete de identidade / Carta de condução';
+
+  @override
+  String get scannerScanTypeIdCardSub => 'Frente e verso numa só página';
+
+  @override
+  String get scannerIdCardFront => 'Capturar frente';
+
+  @override
+  String get scannerIdCardBack => 'Capturar verso';
+
+  @override
+  String get scannerIdCardSelectFront => 'Selecionar frente';
+
+  @override
+  String get scannerIdCardSelectBack => 'Selecionar verso';
+
+  @override
+  String get scannerIdCardInstructions =>
+      'Vai capturar a frente e depois o verso.\nAmbos serão combinados numa só página.';
+
+  @override
+  String get scannerIdCardGalleryInstructions =>
+      'Selecione primeiro a frente e depois o verso.\nAmbos serão combinados numa só página.';
+
+  @override
+  String get scannerAddIdCard => 'Adicionar BI / Carta de condução';
+
+  @override
+  String get scannerIdCardLayoutTitle => 'Disposição do cartão';
+
+  @override
+  String get scannerIdCardLayoutHorizontal => 'Lado a lado';
+
+  @override
+  String get scannerIdCardLayoutVertical => 'Empilhado';
+
+  @override
+  String get scannerIdCardRotateFront => 'Rodar frente';
+
+  @override
+  String get scannerIdCardRotateBack => 'Rodar verso';
+
+  @override
+  String get scannerIdCardDone => 'Concluído';
+
+  @override
   String get scannerDeletePageTitle => 'Eliminar página?';
 
   @override
