@@ -39,12 +39,14 @@ class AppConstants {
   static const String dateFormat = 'dd-MMM-yy H:mm';
 
   // Scanner page
-  static const double scannerPageViewFraction = 1.0;
+  // < 1.0 so the edge of the adjacent page peeks in, hinting swipeability.
+  static const double scannerPageViewFraction = 0.88;
   static const double scannerCardBorderRadius = 4.0;
   static const double scannerCardShadowBlur = 12.0;
   static const double scannerCardShadowAlpha = 0.12;
   static const double scannerPageItemShadowY = 4.0;
-  static const double scannerPageItemPaddingH = 0.0;
+  // Small gap between cards when multiple pages are visible.
+  static const double scannerPageItemPaddingH = 8.0;
   static const double scannerPageItemPaddingV = 16.0;
   static const double scannerBottomBarHeight = 64.0;
   static const double scannerBottomBarPaddingTop = 12.0;
